@@ -3,18 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Incontri - Home</title>
+  <title>Home - Incontri</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>Benvenuto su <span class="highlight">Incontri</span>!</h1>
-    <p>Trova nuove persone, nuovi amici, nuove emozioni.</p>
+    <h1>Benvenuto su Incontri!</h1>
 
-    <div class="buttons">
-      <a href="signup.html" class="btn">Iscriviti</a>
-      <a href="login.html" class="btn">Accedi</a>
-    </div>
+    <div id="welcome"></div>
+
+    <a href="login.html" class="btn">Accedi</a>
+    <a href="signup.html" class="btn">Registrati</a>
+
   </div>
+
+  <script>
+    const userEmail = localStorage.getItem('userEmail');
+    if (userEmail) {
+      document.getElementById('welcome').innerHTML = `<p>Sei loggato come: <strong>${userEmail}</strong></p>`;
+    }
+  </script>
 </body>
 </html>
