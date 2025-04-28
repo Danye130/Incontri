@@ -15,14 +15,13 @@
   </div>
 
   <script>
-    const myEmail = localStorage.getItem('userEmail'); // Recupero la mia email salvata al login
+    const myEmail = localStorage.getItem('userEmail');
 
     fetch('https://incontri-backend.onrender.com/list-users')
       .then(response => response.json())
       .then(users => {
         const usersList = document.getElementById('users-list');
         users.forEach(user => {
-          // Non mostro il proprio profilo nella lista
           if (user.email !== myEmail) {
             const userDiv = document.createElement('div');
             userDiv.innerHTML = `
