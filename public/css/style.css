@@ -102,3 +102,10 @@ input, button {
   align-self: flex-start;
   text-align: left;
 }
+.profile-photo {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
