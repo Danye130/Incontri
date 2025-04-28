@@ -3,27 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home - Incontri</title>
+  <title>Incontri - Home</title>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
     <h1>Incontri</h1>
     <div id="welcome-message"></div>
-
-    <div class="buttons">
+    <div id="auth-buttons">
       <a href="login.html" class="btn">Accedi</a>
       <a href="signup.html" class="btn">Registrati</a>
+    </div>
+    <div id="profile-buttons" style="display: none;">
+      <a href="profile.html" class="btn">Vai al Profilo</a>
+      <a href="#" onclick="logout()" class="btn logout-btn">Logout</a>
+      <!-- Notifiche messaggi -->
+      <a href="chat.html" class="btn message-icon">
+        📩 <span id="newMessagesCount"></span>
+      </a>
     </div>
   </div>
 
   <script>
     const userEmail = localStorage.getItem('userEmail');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const authButtons = document.getElementById('auth-buttons');
+    const profileButtons = document.getElementById('profile-buttons');
+
     if (userEmail) {
-      document.getElementById('welcome-message').innerHTML = `
-        <p>Benvenuto di nuovo, <strong>${userEmail}</strong>!</p>
-        <a href="profile.html?email=${userEmail}" class="btn">Vai al Profilo</a>
-      `;
+      welcomeMessage.innerHTML = `Benvenuto di nuovo, <strong>${userEmail}</strong>!`;
+      authButtons.style.display = 'none';
+      profileButtons.style.display = 'block';
+    } else {
+      welcomeMessage.textContent = 'Benvenuto! Accedi o registrati per iniziare!';
+    }
+
+    function logout() {
+      localStorage.removeItem('userEmail');
+      window.location.reload();
+    }
+
+    // BUSTA NOTIFICHE (se sei loggato)
+    if (userEmail) {
+      setInterval(() => {
+        fetch(`https://incontri-backend.onrender.com/check-new-messages?email=${userEmail}`)
+          .then(response => response.json())
+          .then(data => {
+            const counter = document.getElementById('newMessagesCount');
+            counter.textContent = data.newMessages > 0 ? `(${data.newMessages})` : '';
+          });
+      }, 3000);
     }
   </script>
 </body>
