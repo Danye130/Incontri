@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lista Utenti - Incontri</title>
+  <title>Utenti - Incontri</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
     <h1>Utenti Registrati</h1>
-    <div id="users-list"></div>
+    <div id="users-list" class="card-grid"></div>
 
     <a href="index.html" class="btn">Torna alla Home</a>
   </div>
@@ -24,11 +24,12 @@
         users.forEach(user => {
           if (user.email !== myEmail) {
             const userDiv = document.createElement('div');
+            userDiv.className = 'card';
             userDiv.innerHTML = `
-              <p><strong>Email:</strong> ${user.email}</p>
-              <p><strong>Descrizione:</strong> ${user.description || 'Nessuna descrizione'}</p>
+              <img src="${user.photo || 'default.jpg'}" alt="Foto profilo" class="profile-photo">
+              <h3>${user.email}</h3>
+              <p>${user.description || 'Nessuna descrizione'}</p>
               <a href="chat.html?receiver=${encodeURIComponent(user.email)}" class="btn">Chatta</a>
-              <hr>
             `;
             usersList.appendChild(userDiv);
           }
