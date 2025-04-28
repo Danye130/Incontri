@@ -10,11 +10,32 @@
   <div class="container">
     <h1>Il tuo profilo</h1>
     <div id="profile-data">
-      <p><strong>Email:</strong> [email]</p>
-      <p><strong>Descrizione:</strong> [descrizione]</p>
-      <div id="photo-section"></div>
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <p><strong>Descrizione:</strong> <span id="description"></span></p>
     </div>
+
+    <br>
+
+    <a href="chat.html" class="btn">Vai alla Chat</a>
+    <a href="utenti.html" class="btn">Vedi altri profili</a>
     <a href="index.html" class="btn">Torna alla Home</a>
   </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email');
+
+    if (email) {
+      fetch(`https://incontri-backend.onrender.com/profile-data?email=${email}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('email').textContent = data.email;
+          document.getElementById('description').textContent = data.description || 'Nessuna descrizione';
+        })
+        .catch(err => console.error('Errore caricamento profilo:', err));
+    } else {
+      document.getElementById('profile-data').innerHTML = '<p>Errore: utente non trovato.</p>';
+    }
+  </script>
 </body>
 </html>
