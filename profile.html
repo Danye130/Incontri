@@ -8,16 +8,13 @@
 </head>
 <body>
   <div class="container">
-    <h1>Il tuo profilo</h1>
-    <div id="profile-data">
-      <p><strong>Email:</strong> <span id="email"></span></p>
-      <p><strong>Descrizione:</strong> <span id="description"></span></p>
+    <h1>Il tuo Profilo</h1>
+    <div id="profile-info" class="card"></div>
+
+    <div class="buttons">
+      <a href="utenti.html" class="btn">Vedi Utenti</a>
+      <a href="index.html" class="btn">Torna alla Home</a>
     </div>
-
-    <br>
-
-    <a href="utenti.html" class="btn">Vedi altri utenti</a>
-    <a href="index.html" class="btn">Torna alla Home</a>
   </div>
 
   <script>
@@ -28,12 +25,15 @@
       fetch(`https://incontri-backend.onrender.com/profile-data?email=${email}`)
         .then(response => response.json())
         .then(data => {
-          document.getElementById('email').textContent = data.email;
-          document.getElementById('description').textContent = data.description || 'Nessuna descrizione';
+          document.getElementById('profile-info').innerHTML = `
+            <img src="${data.photo}" alt="Foto profilo" class="profile-photo">
+            <h2>${data.email}</h2>
+            <p>${data.description || 'Nessuna descrizione'}</p>
+          `;
         })
         .catch(err => console.error('Errore caricamento profilo:', err));
     } else {
-      document.getElementById('profile-data').innerHTML = '<p>Errore: utente non trovato.</p>';
+      document.getElementById('profile-info').innerHTML = '<p>Errore: Utente non trovato</p>';
     }
   </script>
 </body>
