@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat - Incontri</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #messages {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+    }
+    #messageInput {
+      width: 80%;
+      padding: 10px;
+    }
+    #sendButton {
+      padding: 10px 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Chat</h1>
+    <div id="messages"></div>
+
+    <input type="text" id="messageInput" placeholder="Scrivi un messaggio...">
+    <button id="sendButton">Invia</button>
+
+    <br><br>
+    <a href="index.html" class="btn">Torna alla Home</a>
+  </div>
+
+  <script>
+    const email = prompt("Inserisci la tua email:");
+    const receiver = prompt("Inserisci l'email dell'utente con cui vuoi chattare:");
+
+    // Carica i messaggi esistenti
+    function loadMessages() {
+      fetch(`https://incontri-backend.onrender.com/get-messages?sender=${email}&receiver=${receiver}`)
+        .then(response => response.json())
+        .then(messages => {
+          const messagesDiv = document.getElementById('messages');
+          messagesDiv.innerHTML = '';
+          messages.forEach(msg => {
+            const p = document.createElement('p');
+            p.textContent = `${msg.sender}: ${msg.text}`;
+            messagesDiv.appendChild(p);
+          });
+        })
+        .catch(err => console.error('Errore caricamento messaggi:', err));
+    }
+
+    document.getElementById('sendButton').addEventListener('click', () => {
+      const text = document.getElementById('messageInput').value;
+      fetch('https://incontri-backend.onrender.com/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: email, receiver, text })
+      })
+      .then(() => {
+        document.getElementById('messageInput').value = '';
+        loadMessages();
+      })
+      .catch(err => console.error('Errore invio messaggio:', err));
+    });
+
+    // Carichiamo i messaggi appena si apre la pagina
+    loadMessages();
+  </script>
+
+</body>
+</html>
