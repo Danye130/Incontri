@@ -37,10 +37,14 @@
   </div>
 
   <script>
-    const email = prompt("Inserisci la tua email:");
-    const receiver = prompt("Inserisci l'email dell'utente con cui vuoi chattare:");
+    const email = localStorage.getItem('userEmail'); // prendo l'email salvata dopo il login
+    const params = new URLSearchParams(window.location.search);
+    const receiver = params.get('receiver'); // prendo il destinatario dalla URL
 
-    // Carica i messaggi esistenti
+    if (!email || !receiver) {
+      alert('Errore: manca l\'email o il destinatario!');
+    }
+
     function loadMessages() {
       fetch(`https://incontri-backend.onrender.com/get-messages?sender=${email}&receiver=${receiver}`)
         .then(response => response.json())
