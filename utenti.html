@@ -15,18 +15,24 @@
   </div>
 
   <script>
+    const myEmail = localStorage.getItem('userEmail'); // Recupero la mia email salvata al login
+
     fetch('https://incontri-backend.onrender.com/list-users')
       .then(response => response.json())
       .then(users => {
         const usersList = document.getElementById('users-list');
         users.forEach(user => {
-          const userDiv = document.createElement('div');
-          userDiv.innerHTML = `
-            <p><strong>Email:</strong> ${user.email}</p>
-            <p><strong>Descrizione:</strong> ${user.description || 'Nessuna descrizione'}</p>
-            <hr>
-          `;
-          usersList.appendChild(userDiv);
+          // Non mostro il proprio profilo nella lista
+          if (user.email !== myEmail) {
+            const userDiv = document.createElement('div');
+            userDiv.innerHTML = `
+              <p><strong>Email:</strong> ${user.email}</p>
+              <p><strong>Descrizione:</strong> ${user.description || 'Nessuna descrizione'}</p>
+              <a href="chat.html?receiver=${encodeURIComponent(user.email)}" class="btn">Chatta</a>
+              <hr>
+            `;
+            usersList.appendChild(userDiv);
+          }
         });
       })
       .catch(err => console.error('Errore caricamento utenti:', err));
