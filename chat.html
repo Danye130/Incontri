@@ -5,26 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chat - Incontri</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    #messages {
-      border: 1px solid #ccc;
-      height: 300px;
-      overflow-y: scroll;
-      margin-bottom: 10px;
-      padding: 10px;
-      background: #f9f9f9;
-    }
-    #messageInput {
-      width: 80%;
-      padding: 10px;
-    }
-    #sendButton {
-      padding: 10px 20px;
-    }
-  </style>
 </head>
 <body>
-
   <div class="container">
     <h1>Chat</h1>
     <div id="messages"></div>
@@ -37,12 +19,18 @@
   </div>
 
   <script>
-    const email = localStorage.getItem('userEmail'); // prendo l'email salvata dopo il login
+    const email = localStorage.getItem('userEmail');
     const params = new URLSearchParams(window.location.search);
-    const receiver = params.get('receiver'); // prendo il destinatario dalla URL
+    const receiver = params.get('receiver');
 
-    if (!email || !receiver) {
-      alert('Errore: manca l\'email o il destinatario!');
+    if (!email) {
+      alert('Non sei loggato! Torna al login.');
+      window.location.href = 'login.html';
+    }
+
+    if (!receiver) {
+      alert('Errore: destinatario mancante!');
+      window.location.href = 'utenti.html';
     }
 
     function loadMessages() {
@@ -74,9 +62,7 @@
       .catch(err => console.error('Errore invio messaggio:', err));
     });
 
-    // Carichiamo i messaggi appena si apre la pagina
     loadMessages();
   </script>
-
 </body>
 </html>
