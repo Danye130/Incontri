@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista Utenti - Incontri</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Utenti Registrati</h1>
+    <div id="users-list"></div>
+
+    <a href="index.html" class="btn">Torna alla Home</a>
+  </div>
+
+  <script>
+    fetch('https://incontri-backend.onrender.com/list-users')
+      .then(response => response.json())
+      .then(users => {
+        const usersList = document.getElementById('users-list');
+        users.forEach(user => {
+          const userDiv = document.createElement('div');
+          userDiv.innerHTML = `
+            <p><strong>Email:</strong> ${user.email}</p>
+            <p><strong>Descrizione:</strong> ${user.description || 'Nessuna descrizione'}</p>
+            <hr>
+          `;
+          usersList.appendChild(userDiv);
+        });
+      })
+      .catch(err => console.error('Errore caricamento utenti:', err));
+  </script>
+</body>
+</html>
