@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Utenti - Incontri</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Utenti Registrati - Incontri</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
-    <h1>Utenti Registrati</h1>
-    <div id="users-list" class="card-grid"></div>
+    <h1>Scopri Nuovi Incontri</h1>
+    <div class="card-grid" id="users-list"></div>
 
     <a href="index.html" class="btn">Torna alla Home</a>
   </div>
@@ -23,41 +24,51 @@
         const usersList = document.getElementById('users-list');
         users.forEach(user => {
           if (user.email !== myEmail) {
-            const userDiv = document.createElement('div');
-            userDiv.className = 'card';
-            userDiv.innerHTML = `
-              <img src="${user.photo || 'default.jpg'}" alt="Foto profilo" class="profile-photo">
-              <h3>${user.email}</h3>
+            const card = document.createElement('div');
+            card.classList.add('card');
+
+            let vipBadge = user.isVIP ? `<span class="vip-badge">VIP</span>` : '';
+
+            card.innerHTML = `
+              <img src="${user.photo || 'images/default-profile.png'}" class="profile-photo">
+              <h3>${user.email} ${vipBadge}</h3>
               <p>${user.description || 'Nessuna descrizione'}</p>
-              <button class="btn" onclick="chatWith('${user.email}')">Chatta</button>
-              <button class="btn like-btn" onclick="likeUser('${user.email}')">Mi Piace ❤️</button>
+              <button class="btn" onclick="startChat('${user.email}')">Chatta</button>
+              <button class="btn like-btn" onclick="likeUser('${user.email}')">❤️ Mi Piace</button>
             `;
-            usersList.appendChild(userDiv);
+            usersList.appendChild(card);
           }
         });
       })
       .catch(err => console.error('Errore caricamento utenti:', err));
 
-    function chatWith(receiverEmail) {
-      window.location.href = `chat.html?receiver=${encodeURIComponent(receiverEmail)}`;
+    function startChat(receiverEmail) {
+      const myEmail = localStorage.getItem('userEmail');
+      if (!myEmail) {
+        alert('Devi accedere prima!');
+        window.location.href = 'login.html';
+        return;
+      }
+      window.location.href = `chat.html?receiver=${receiverEmail}`;
     }
 
     function likeUser(receiverEmail) {
       const myEmail = localStorage.getItem('userEmail');
-      fetch('https://incontri-backend.onrender.com/like-user', {
+      if (!myEmail) {
+        alert('Devi accedere prima!');
+        window.location.href = 'login.html';
+        return;
+      }
+      fetch('https://incontri-backend.onrender.com/like', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromEmail: myEmail, toEmail: receiverEmail })
+        body: JSON.stringify({ sender: myEmail, receiver: receiverEmail })
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.match) {
-          alert('È un MATCH! 🎉 Adesso potete chattare!');
-        } else {
-          alert('Hai messo Mi Piace a questo utente!');
-        }
+      .then(response => response.text())
+      .then(msg => {
+        alert(msg);
       })
-      .catch(err => console.error('Errore Like:', err));
+      .catch(err => console.error('Errore invio like:', err));
     }
   </script>
 </body>
