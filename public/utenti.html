@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Utenti Registrati - Incontri</title>
   <link rel="stylesheet" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <h1>Scopri Nuovi Incontri</h1>
-    <div class="card-grid" id="users-list"></div>
+  <div class="container center-content">
+    <h1>Scopri Nuovi Utenti</h1>
+    <div id="users-grid" class="card-grid"></div>
 
     <a href="index.html" class="btn">Torna alla Home</a>
   </div>
@@ -18,56 +17,59 @@
   <script>
     const myNickname = localStorage.getItem('userNickname');
 
-    fetch('https://incontri-backend.onrender.com/list-users')
-      .then(response => response.json())
-      .then(users => {
-        const usersList = document.getElementById('users-list');
-        users.forEach(user => {
-          const card = document.createElement('div');
-          card.classList.add('card');
+    if (!myNickname) {
+      alert('Devi accedere prima.');
+      window.location.href = 'login.html';
+    }
 
-          let vipBadge = user.isVIP ? `<span class="vip-badge">VIP</span>` : '';
+    function loadUsers() {
+      fetch('https://incontri-backend.onrender.com/list-users')
+        .then(response => response.json())
+        .then(users => {
+          const usersGrid = document.getElementById('users-grid');
+          usersGrid.innerHTML = '';
 
-          card.innerHTML = `
-            <img src="${user.photo || '/images/default-profile.png'}" class="profile-photo">
-            <h3>${user.nickname} ${vipBadge}</h3>
-            <p>${user.description || 'Nessuna descrizione'}</p>
-            <button class="btn" onclick="startChat('${user.nickname}')">Chatta</button>
-            <button class="btn like-btn" onclick="likeUser('${user.nickname}')">❤️ Mi Piace</button>
-          `;
-          usersList.appendChild(card);
-        });
-      })
-      .catch(err => console.error('Errore caricamento utenti:', err));
+          users.forEach(user => {
+            if (user.nickname !== myNickname) { // Non mostrare se stessi
+              const card = document.createElement('div');
+              card.className = 'card';
+
+              card.innerHTML = `
+                <img src="${user.photo || '/images/default-profile.png'}" alt="Foto" class="profile-photo">
+                <h3>${user.nickname} ${user.isVIP ? '<span class="vip-badge">VIP</span>' : ''}</h3>
+                <p>${user.description || 'Nessuna descrizione'}</p>
+                <button class="btn" onclick="startChat('${user.nickname}')">Chatta</button>
+                <button class="btn like-btn" onclick="sendLike('${user.nickname}')">❤️ Mi Piace</button>
+              `;
+
+              usersGrid.appendChild(card);
+            }
+          });
+        })
+        .catch(err => console.error('Errore caricamento utenti:', err));
+    }
 
     function startChat(receiverNickname) {
-      const senderNickname = localStorage.getItem('userNickname');
-      if (!senderNickname) {
-        alert('Devi accedere prima!');
-        window.location.href = 'login.html';
-        return;
-      }
       window.location.href = `chat.html?receiver=${receiverNickname}`;
     }
 
-    function likeUser(receiverNickname) {
-      const senderNickname = localStorage.getItem('userNickname');
-      if (!senderNickname) {
-        alert('Devi accedere prima!');
-        window.location.href = 'login.html';
-        return;
-      }
+    function sendLike(receiverNickname) {
       fetch('https://incontri-backend.onrender.com/like', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: senderNickname, receiver: receiverNickname })
+        body: JSON.stringify({
+          sender: localStorage.getItem('userNickname'),
+          receiver: receiverNickname
+        })
       })
       .then(response => response.text())
-      .then(msg => {
-        alert(msg);
+      .then(data => {
+        alert(data);
       })
       .catch(err => console.error('Errore invio like:', err));
     }
+
+    loadUsers();
   </script>
 </body>
 </html>
