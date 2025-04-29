@@ -2,53 +2,55 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat - Incontri</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
     <h1>Chat</h1>
+
     <div id="messages" class="chat-box"></div>
 
     <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="Scrivi un messaggio...">
+      <input type="text" id="messageInput" placeholder="Scrivi un messaggio..." autocomplete="off">
       <button id="sendButton" class="btn">Invia</button>
     </div>
 
-    <audio id="notificationSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
-
-    <br><br>
     <a href="index.html" class="btn">Torna alla Home</a>
+
+    <audio id="messageSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1158-pristine.mp3" preload="auto"></audio>
   </div>
 
   <script>
-    const email = localStorage.getItem('userEmail');
     const params = new URLSearchParams(window.location.search);
     const receiver = params.get('receiver');
-    const notificationSound = document.getElementById('notificationSound');
-    let lastMessageCount = 0;
+    const sender = localStorage.getItem('userEmail');
+    const messageSound = document.getElementById('messageSound');
 
-    if (!email || !receiver) {
-      alert('Errore: dati mancanti.');
+    if (!receiver || !sender) {
+      alert('Errore: dati mancanti. Devi accedere!');
       window.location.href = 'login.html';
     }
 
     function loadMessages() {
-      fetch(`https://incontri-backend.onrender.com/get-messages?sender=${email}&receiver=${receiver}`)
+      fetch(`https://incontri-backend.onrender.com/get-messages?sender=${sender}&receiver=${receiver}`)
         .then(response => response.json())
         .then(messages => {
           const messagesDiv = document.getElementById('messages');
-          if (messages.length > lastMessageCount) {
-            notificationSound.play();
-          }
-          lastMessageCount = messages.length;
           messagesDiv.innerHTML = '';
           messages.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = msg.sender === email ? 'message sent' : 'message received';
-            div.textContent = `${msg.text}`;
-            messagesDiv.appendChild(div);
+            const p = document.createElement('p');
+            p.classList.add('message');
+            if (msg.sender === sender) {
+              p.classList.add('sent');
+            } else {
+              p.classList.add('received');
+              messageSound.play();
+            }
+            p.textContent = `${msg.text}`;
+            messagesDiv.appendChild(p);
           });
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
         })
@@ -57,10 +59,11 @@
 
     document.getElementById('sendButton').addEventListener('click', () => {
       const text = document.getElementById('messageInput').value;
+      if (!text.trim()) return;
       fetch('https://incontri-backend.onrender.com/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: email, receiver, text })
+        body: JSON.stringify({ sender, receiver, text })
       })
       .then(() => {
         document.getElementById('messageInput').value = '';
@@ -69,9 +72,7 @@
       .catch(err => console.error('Errore invio messaggio:', err));
     });
 
-    // Aggiorna la chat ogni 3 secondi
     setInterval(loadMessages, 3000);
-
     loadMessages();
   </script>
 </body>
