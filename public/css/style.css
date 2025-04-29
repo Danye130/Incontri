@@ -26,6 +26,11 @@ body {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
+/* Centrare contenuti */
+.center-content {
+  text-align: center;
+}
+
 /* Titoli */
 h1, h2, h3 {
   text-align: center;
@@ -69,7 +74,13 @@ textarea {
   background-color: #e6004c;
 }
 
-/* Card utenti */
+/* Bottoni secondari */
+.link {
+  color: #ffcc00;
+  text-decoration: none;
+}
+
+/* Griglia utenti */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -77,6 +88,7 @@ textarea {
   margin-top: 30px;
 }
 
+/* Card utente */
 .card {
   background: rgba(255, 255, 255, 0.1);
   padding: 20px;
@@ -85,6 +97,7 @@ textarea {
   backdrop-filter: blur(5px);
 }
 
+/* Immagine profilo */
 .profile-photo {
   width: 100%;
   height: 200px;
@@ -93,7 +106,16 @@ textarea {
   margin-bottom: 10px;
 }
 
-/* Badge VIP */
+/* Immagine profilo grande */
+.profile-photo-large {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 15px;
+}
+
+/* VIP Badge */
 .vip-badge {
   background: gold;
   color: black;
@@ -112,4 +134,28 @@ textarea {
 
 .like-btn:hover {
   background-color: #ffcc00;
+}
+
+/* Chat Box */
+.chat-box {
+  border: 1px solid #ccc;
+  background: rgba(255, 255, 255, 0.1);
+  height: 300px;
+  overflow-y: scroll;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 15px;
+}
+
+/* Messaggi */
+.message-sent {
+  text-align: right;
+  margin: 5px 0;
+  color: #00ff99;
+}
+
+.message-received {
+  text-align: left;
+  margin: 5px 0;
+  color: #ffffff;
 }
