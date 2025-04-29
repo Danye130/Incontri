@@ -10,22 +10,23 @@
 <body>
   <div class="container center-content">
     <h1 class="home-title">Benvenuto su Incontri ❤️</h1>
-    <p class="home-subtitle">Incontra nuove persone, crea nuove connessioni!</p>
+    <p class="home-subtitle">Incontra nuove persone e vivi nuove emozioni!</p>
 
-    <div class="home-buttons">
+    <div id="home-buttons" class="home-buttons">
       <a href="signup.html" class="btn">Registrati</a>
       <a href="login.html" class="btn">Accedi</a>
-      <a href="utenti.html" class="btn">Scopri gli Utenti</a>
     </div>
   </div>
 
   <script>
-    // Se sei già loggato, nascondi i pulsanti registrazione e login
     const nickname = localStorage.getItem('userNickname');
+
     if (nickname) {
-      document.querySelector('.home-buttons').innerHTML = `
+      document.getElementById('home-buttons').innerHTML = `
         <a href="profile.html" class="btn">Il Mio Profilo</a>
-        <a href="utenti.html" class="btn">Scopri Utenti</a>
+        <a href="utenti.html" class="btn">Scopri Persone</a>
+        <a href="vip.html" class="btn">Diventa VIP 🌟</a>
+        <a href="modifica-profilo.html" class="btn">Modifica Profilo</a>
       `;
     }
   </script>
