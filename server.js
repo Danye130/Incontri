@@ -133,6 +133,18 @@ app.get('/', (req, res) => {
 });
 
 // Avvio server
+// Ritorna il nickname dato l'email
+app.get('/get-nickname', async (req, res) => {
+  const email = req.query.email;
+  const user = await User.findOne({ email });
+
+  if (user) {
+    res.json({ nickname: user.nickname });
+  } else {
+    res.status(404).send('Utente non trovato');
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server avviato su http://localhost:${PORT}`);
 });
