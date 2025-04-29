@@ -3,45 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Il tuo Profilo - Incontri</title>
+  <title>Il Tuo Profilo - Incontri</title>
   <link rel="stylesheet" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <h1>Il tuo Profilo</h1>
-    <div id="profile-data">
-      <img id="photo" class="profile-photo" alt="Foto Profilo">
-      <h2 id="email"></h2>
+  <div class="container center-content">
+    <h1>Il Tuo Profilo</h1>
+
+    <div id="profile-section">
+      <img id="profile-photo" src="/images/default-profile.png" alt="Foto Profilo" class="profile-photo-large">
+      <h2 id="nickname"></h2>
       <p id="description"></p>
-      <div id="vip-badge"></div>
+      <div id="vip-section"></div>
     </div>
 
-    <a href="index.html" class="btn">Torna alla Home</a>
+    <a href="utenti.html" class="btn">Scopri gli altri utenti</a>
+    <a href="index.html" class="btn">Home</a>
   </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const email = params.get('email') || localStorage.getItem('userEmail');
+    const email = localStorage.getItem('userEmail');
 
-    if (email) {
+    if (!email) {
+      alert('Devi accedere prima.');
+      window.location.href = 'login.html';
+    } else {
       fetch(`https://incontri-backend.onrender.com/profile-data?email=${email}`)
         .then(response => response.json())
         .then(data => {
-          document.getElementById('email').textContent = data.email;
+          document.getElementById('nickname').textContent = data.nickname;
           document.getElementById('description').textContent = data.description || 'Nessuna descrizione';
-          document.getElementById('photo').src = data.photo || 'images/default-profile.png';
+
+          if (data.photo) {
+            document.getElementById('profile-photo').src = data.photo;
+          }
 
           if (data.isVIP) {
-            document.getElementById('vip-badge').innerHTML = `<span class="vip-badge">VIP</span>`;
+            document.getElementById('vip-section').innerHTML = `
+              <p class="vip-label">Sei un utente VIP! 🌟</p>
+              <button class="btn">Funzioni Esclusive VIP</button>
+            `;
+          } else {
+            document.getElementById('vip-section').innerHTML = `
+              <p>Non sei ancora VIP.</p>
+              <button class="btn">Diventa VIP</button>
+            `;
           }
         })
-        .catch(err => {
-          console.error('Errore caricamento profilo:', err);
-          document.getElementById('profile-data').innerHTML = '<p>Errore: utente non trovato.</p>';
-        });
-    } else {
-      document.getElementById('profile-data').innerHTML = '<p>Errore: utente non trovato.</p>';
+        .catch(err => console.error('Errore caricamento profilo', err));
     }
   </script>
 </body>
