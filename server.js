@@ -5,6 +5,7 @@ const cors = require('cors');
 const multer = require('multer');
 const sharp = require('sharp');
 const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,7 @@ mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.
 
 // Schemi
 const UserSchema = new mongoose.Schema({
+  nickname: String,
   email: String,
   password: String,
   description: String,
@@ -50,7 +52,7 @@ const upload = multer({ storage: storage });
 // Routes
 app.post('/signup', upload.single('photo'), async (req, res) => {
   try {
-    const { email, password, description } = req.body;
+    const { nickname, email, password, description } = req.body;
     let photoPath = '';
 
     if (req.file) {
@@ -63,7 +65,7 @@ app.post('/signup', upload.single('photo'), async (req, res) => {
       photoPath = '/uploads/' + filename;
     }
 
-    const newUser = new User({ email, password, description, photo: photoPath });
+    const newUser = new User({ nickname, email, password, description, photo: photoPath });
     await newUser.save();
     res.redirect(`/profile.html?email=${email}`);
   } catch (err) {
@@ -87,7 +89,7 @@ app.get('/profile-data', async (req, res) => {
   const user = await User.findOne({ email });
   if (user) {
     res.json({
-      email: user.email,
+      nickname: user.nickname,
       description: user.description,
       photo: user.photo,
       isVIP: user.isVIP
@@ -99,7 +101,13 @@ app.get('/profile-data', async (req, res) => {
 
 app.get('/list-users', async (req, res) => {
   const users = await User.find({});
-  res.json(users);
+  const sanitizedUsers = users.map(user => ({
+    nickname: user.nickname,
+    description: user.description,
+    photo: user.photo,
+    isVIP: user.isVIP
+  }));
+  res.json(sanitizedUsers);
 });
 
 app.post('/send-message', async (req, res) => {
@@ -120,30 +128,11 @@ app.get('/get-messages', async (req, res) => {
   res.json(messages);
 });
 
-app.get('/check-new-messages', async (req, res) => {
-  const { email } = req.query;
-  const newMessages = await Message.countDocuments({ receiver: email });
-  res.json({ newMessages });
-});
-
-app.post('/like', async (req, res) => {
-  const { sender, receiver } = req.body;
-  const user = await User.findOne({ email: sender });
-  if (user && !user.likes.includes(receiver)) {
-    user.likes.push(receiver);
-    await user.save();
-    res.send('Like inviato!');
-  } else {
-    res.send('Hai già messo Mi Piace a questo utente.');
-  }
-});
-
-// Home Page
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Avvio Server
+// Avvio server
 app.listen(PORT, () => {
   console.log(`Server avviato su http://localhost:${PORT}`);
 });
