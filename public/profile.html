@@ -17,8 +17,12 @@
       <div id="vip-section"></div>
     </div>
 
-    <a href="utenti.html" class="btn">Scopri gli altri utenti</a>
-    <a href="index.html" class="btn">Home</a>
+    <div class="profile-buttons">
+      <a href="utenti.html" class="btn">Scopri Utenti</a>
+      <a href="vip.html" class="btn">Diventa VIP 🌟</a>
+      <a href="modifica-profilo.html" class="btn">Modifica Profilo</a>
+      <a href="index.html" class="btn">Home</a>
+    </div>
   </div>
 
   <script>
@@ -39,18 +43,12 @@
           }
 
           if (data.isVIP) {
-            document.getElementById('vip-section').innerHTML = `
-              <p class="vip-label">Sei un utente VIP! 🌟</p>
-              <button class="btn">Funzioni Esclusive VIP</button>
-            `;
+            document.getElementById('vip-section').innerHTML = `<p class="vip-label">🌟 Sei un utente VIP!</p>`;
           } else {
-            document.getElementById('vip-section').innerHTML = `
-              <p>Non sei ancora VIP.</p>
-              <button class="btn">Diventa VIP</button>
-            `;
+            document.getElementById('vip-section').innerHTML = `<p>Non sei ancora VIP.</p>`;
           }
         })
-        .catch(err => console.error('Errore caricamento profilo', err));
+        .catch(err => console.error('Errore caricamento profilo:', err));
     }
   </script>
 </body>
