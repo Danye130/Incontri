@@ -16,45 +16,43 @@
   </div>
 
   <script>
-    const myEmail = localStorage.getItem('userEmail');
+    const myNickname = localStorage.getItem('userNickname');
 
     fetch('https://incontri-backend.onrender.com/list-users')
       .then(response => response.json())
       .then(users => {
         const usersList = document.getElementById('users-list');
         users.forEach(user => {
-          if (user.email !== myEmail) {
-            const card = document.createElement('div');
-            card.classList.add('card');
+          const card = document.createElement('div');
+          card.classList.add('card');
 
-            let vipBadge = user.isVIP ? `<span class="vip-badge">VIP</span>` : '';
+          let vipBadge = user.isVIP ? `<span class="vip-badge">VIP</span>` : '';
 
-            card.innerHTML = `
-              <img src="${user.photo || 'images/default-profile.png'}" class="profile-photo">
-              <h3>${user.email} ${vipBadge}</h3>
-              <p>${user.description || 'Nessuna descrizione'}</p>
-              <button class="btn" onclick="startChat('${user.email}')">Chatta</button>
-              <button class="btn like-btn" onclick="likeUser('${user.email}')">❤️ Mi Piace</button>
-            `;
-            usersList.appendChild(card);
-          }
+          card.innerHTML = `
+            <img src="${user.photo || '/images/default-profile.png'}" class="profile-photo">
+            <h3>${user.nickname} ${vipBadge}</h3>
+            <p>${user.description || 'Nessuna descrizione'}</p>
+            <button class="btn" onclick="startChat('${user.nickname}')">Chatta</button>
+            <button class="btn like-btn" onclick="likeUser('${user.nickname}')">❤️ Mi Piace</button>
+          `;
+          usersList.appendChild(card);
         });
       })
       .catch(err => console.error('Errore caricamento utenti:', err));
 
-    function startChat(receiverEmail) {
-      const myEmail = localStorage.getItem('userEmail');
-      if (!myEmail) {
+    function startChat(receiverNickname) {
+      const senderNickname = localStorage.getItem('userNickname');
+      if (!senderNickname) {
         alert('Devi accedere prima!');
         window.location.href = 'login.html';
         return;
       }
-      window.location.href = `chat.html?receiver=${receiverEmail}`;
+      window.location.href = `chat.html?receiver=${receiverNickname}`;
     }
 
-    function likeUser(receiverEmail) {
-      const myEmail = localStorage.getItem('userEmail');
-      if (!myEmail) {
+    function likeUser(receiverNickname) {
+      const senderNickname = localStorage.getItem('userNickname');
+      if (!senderNickname) {
         alert('Devi accedere prima!');
         window.location.href = 'login.html';
         return;
@@ -62,7 +60,7 @@
       fetch('https://incontri-backend.onrender.com/like', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: myEmail, receiver: receiverEmail })
+        body: JSON.stringify({ sender: senderNickname, receiver: receiverNickname })
       })
       .then(response => response.text())
       .then(msg => {
