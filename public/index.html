@@ -3,62 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Incontri - Home</title>
+  <title>Benvenuto su Incontri</title>
   <link rel="stylesheet" href="css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="overlay"></div>
+  <div class="container center-content">
+    <h1 class="home-title">Benvenuto su Incontri ❤️</h1>
+    <p class="home-subtitle">Incontra nuove persone, crea nuove connessioni!</p>
 
-  <div class="container">
-    <h1>Incontri 💖</h1>
-    <div id="welcome-message"></div>
-
-    <div id="auth-buttons">
-      <a href="login.html" class="btn">Accedi</a>
+    <div class="home-buttons">
       <a href="signup.html" class="btn">Registrati</a>
-    </div>
-
-    <div id="profile-buttons" style="display: none;">
-      <a href="profile.html" class="btn">Vai al Profilo</a>
-      <a href="utenti.html" class="btn">Scopri Utenti</a>
-      <a href="chat.html" class="btn">Chat</a>
-      <a href="#" onclick="logout()" class="btn logout-btn">Logout</a>
-      <a href="chat.html" class="message-icon">
-        📩 <span id="newMessagesCount"></span>
-      </a>
+      <a href="login.html" class="btn">Accedi</a>
+      <a href="utenti.html" class="btn">Scopri gli Utenti</a>
     </div>
   </div>
 
   <script>
-    const userEmail = localStorage.getItem('userEmail');
-    const welcomeMessage = document.getElementById('welcome-message');
-    const authButtons = document.getElementById('auth-buttons');
-    const profileButtons = document.getElementById('profile-buttons');
-
-    if (userEmail) {
-      welcomeMessage.innerHTML = `Benvenuto, <strong>${userEmail}</strong>!`;
-      authButtons.style.display = 'none';
-      profileButtons.style.display = 'block';
-    } else {
-      welcomeMessage.textContent = 'Benvenuto! Accedi o Registrati per iniziare!';
-    }
-
-    function logout() {
-      localStorage.removeItem('userEmail');
-      window.location.reload();
-    }
-
-    // Busta notifiche messaggi
-    if (userEmail) {
-      setInterval(() => {
-        fetch(`https://incontri-backend.onrender.com/check-new-messages?email=${userEmail}`)
-          .then(response => response.json())
-          .then(data => {
-            const counter = document.getElementById('newMessagesCount');
-            counter.textContent = data.newMessages > 0 ? `(${data.newMessages})` : '';
-          });
-      }, 3000);
+    // Se sei già loggato, nascondi i pulsanti registrazione e login
+    const nickname = localStorage.getItem('userNickname');
+    if (nickname) {
+      document.querySelector('.home-buttons').innerHTML = `
+        <a href="profile.html" class="btn">Il Mio Profilo</a>
+        <a href="utenti.html" class="btn">Scopri Utenti</a>
+      `;
     }
   </script>
 </body>
