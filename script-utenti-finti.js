@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { faker } = require('@faker-js/faker');  // <-- NOTA QUESTO CAMBIAMENTO!
+const { faker } = require('@faker-js/faker');
 
 mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
@@ -9,6 +9,7 @@ mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.
 .catch((err) => console.error('Errore MongoDB ❌', err));
 
 const UserSchema = new mongoose.Schema({
+  nickname: String,
   email: String,
   password: String,
   description: String,
@@ -19,14 +20,27 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
+// Lista di foto donne disponibili
+const photos = [
+  '/images/donna1.jpg',
+  '/images/donna2.jpg',
+  '/images/donna3.jpg',
+  '/images/donna4.jpg',
+  '/images/donna5.jpg',
+  '/images/donna6.jpg'
+];
+
 async function createFakeUsers() {
-  await User.deleteMany({});
+  await User.deleteMany({}); // Cancella utenti precedenti
+
   for (let i = 0; i < 10; i++) {
+    const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
     const fakeUser = new User({
+      nickname: faker.internet.userName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
       description: faker.lorem.sentence(),
-      photo: '/images/default-profile.png',
+      photo: randomPhoto,
       isVIP: faker.datatype.boolean()
     });
     await fakeUser.save();
