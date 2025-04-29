@@ -9,33 +9,31 @@
 <body>
   <div class="container center-content">
     <h1>Accedi</h1>
+
     <form id="loginForm" action="/login" method="POST">
       <input type="email" name="email" placeholder="Email" required><br>
       <input type="password" name="password" placeholder="Password" required><br>
       <button type="submit" class="btn">Accedi</button>
     </form>
 
-    <p><a href="signup.html" class="link">Non hai un account? Registrati!</a></p>
+    <p><a href="signup.html" class="link">Non hai un account? Registrati ora!</a></p>
   </div>
 
   <script>
     const form = document.getElementById('loginForm');
 
     form.addEventListener('submit', async (e) => {
-      const email = form.querySelector('input[name="email"]').value;
+      const emailInput = form.querySelector('input[name="email"]').value;
+      localStorage.setItem('userEmail', emailInput);
 
-      // Salva email nel localStorage
-      localStorage.setItem('userEmail', email);
-
-      // Richiedi nickname dal backend
       try {
-        const res = await fetch(`https://incontri-backend.onrender.com/get-nickname?email=${email}`);
+        const res = await fetch(`https://incontri-backend.onrender.com/get-nickname?email=${emailInput}`);
         const data = await res.json();
         if (data.nickname) {
           localStorage.setItem('userNickname', data.nickname);
         }
       } catch (err) {
-        console.error('Errore recupero nickname', err);
+        console.error('Errore nel recuperare nickname', err);
       }
     });
   </script>
