@@ -4,15 +4,15 @@ const multer = require('multer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const sharp = require('sharp');
+const stripe = require('stripe')('sk_test_1234567890abcdef'); // Chiave di test Stripe
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
-
-// Percorso statico
-app.use(express.static('public'));
-
 const PORT = process.env.PORT || 3000;
+
+// Static files
+app.use(express.static('public'));
 
 // Middleware
 app.use(cors());
@@ -27,7 +27,7 @@ mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.
 .then(() => console.log('MongoDB Connesso ✅'))
 .catch((err) => console.error('Errore MongoDB ❌', err));
 
-// Modello utente
+// Schemi
 const UserSchema = new mongoose.Schema({
   nickname: String,
   email: String,
@@ -37,20 +37,17 @@ const UserSchema = new mongoose.Schema({
   isVIP: { type: Boolean, default: false },
   likes: [String]
 });
-
 const User = mongoose.model('User', UserSchema);
 
-// Modello messaggi
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
   text: String,
   timestamp: { type: Date, default: Date.now }
 });
-
 const Message = mongoose.model('Message', MessageSchema);
 
-// Multer storage per upload foto
+// Multer storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadPath = 'public/uploads/';
@@ -63,7 +60,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Route Registrazione
+// Rotte
+
+// Registrazione
 app.post('/signup', upload.single('photo'), async (req, res) => {
   const { nickname, email, password, description } = req.body;
   let photoPath = '/images/default-profile.png';
@@ -85,7 +84,7 @@ app.post('/signup', upload.single('photo'), async (req, res) => {
   res.redirect('/login.html');
 });
 
-// Route Login
+// Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email, password });
@@ -96,7 +95,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Get profile data
+// Dati profilo
 app.get('/profile-data', async (req, res) => {
   const { email } = req.query;
   const user = await User.findOne({ email });
@@ -113,7 +112,7 @@ app.get('/profile-data', async (req, res) => {
   }
 });
 
-// Get nickname
+// Nickname da email
 app.get('/get-nickname', async (req, res) => {
   const { email } = req.query;
   const user = await User.findOne({ email });
@@ -131,7 +130,7 @@ app.get('/list-users', async (req, res) => {
   res.json(users);
 });
 
-// Invia un messaggio
+// Invia messaggio
 app.post('/send-message', async (req, res) => {
   const { sender, receiver, text } = req.body;
   const newMessage = new Message({ sender, receiver, text });
@@ -139,7 +138,7 @@ app.post('/send-message', async (req, res) => {
   res.sendStatus(200);
 });
 
-// Ottieni i messaggi
+// Ottieni messaggi
 app.get('/get-messages', async (req, res) => {
   const { sender, receiver } = req.query;
   const messages = await Message.find({
@@ -151,10 +150,9 @@ app.get('/get-messages', async (req, res) => {
   res.json(messages);
 });
 
-// Mi Piace
+// Invia like
 app.post('/like', async (req, res) => {
   const { sender, receiver } = req.body;
-
   const user = await User.findOne({ nickname: receiver });
   if (user) {
     if (!user.likes.includes(sender)) {
@@ -167,7 +165,55 @@ app.post('/like', async (req, res) => {
   }
 });
 
-// Home route
+// Aggiorna profilo
+app.post('/update-profile', upload.single('photo'), async (req, res) => {
+  const { email, nickname, description, password } = req.body;
+  const user = await User.findOne({ email });
+
+  if (user) {
+    user.nickname = nickname;
+    user.description = description;
+    user.password = password;
+
+    if (req.file) {
+      const outputPath = 'public/uploads/' + 'resized-' + req.file.filename;
+      await sharp(req.file.path).resize(300, 300).toFile(outputPath);
+      fs.unlinkSync(req.file.path);
+      user.photo = '/uploads/resized-' + req.file.filename;
+    }
+
+    await user.save();
+    res.redirect('/profile.html');
+  } else {
+    res.status(404).send('Utente non trovato');
+  }
+});
+
+// Stripe Checkout session (TEST)
+app.post('/create-checkout-session', async (req, res) => {
+  const { priceId } = req.body;
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [{
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: 'Piano VIP Incontri'
+        },
+        unit_amount: priceId === 'price_1_month' ? 999 : 4999,
+      },
+      quantity: 1
+    }],
+    mode: 'payment',
+    success_url: 'https://incontri-backend.onrender.com/index.html?success=true',
+    cancel_url: 'https://incontri-backend.onrender.com/index.html?canceled=true'
+  });
+
+  res.json({ id: session.id });
+});
+
+// Home
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
