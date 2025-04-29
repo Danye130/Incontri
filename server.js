@@ -1,20 +1,23 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const multer = require('multer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const multer = require('multer');
 const sharp = require('sharp');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
+
+// Percorso statico
+app.use(express.static('public'));
+
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
+// Middleware
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static('public'));
 
 // MongoDB Connection
 mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
@@ -24,7 +27,7 @@ mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.
 .then(() => console.log('MongoDB Connesso ✅'))
 .catch((err) => console.error('Errore MongoDB ❌', err));
 
-// Schemi
+// Modello utente
 const UserSchema = new mongoose.Schema({
   nickname: String,
   email: String,
@@ -35,6 +38,9 @@ const UserSchema = new mongoose.Schema({
   likes: [String]
 });
 
+const User = mongoose.model('User', UserSchema);
+
+// Modello messaggi
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -42,51 +48,59 @@ const MessageSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
-const User = mongoose.model('User', UserSchema);
 const Message = mongoose.model('Message', MessageSchema);
 
-// Multer + Sharp per foto profilo
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
-// Routes
-app.post('/signup', upload.single('photo'), async (req, res) => {
-  try {
-    const { nickname, email, password, description } = req.body;
-    let photoPath = '';
-
-    if (req.file) {
-      const filename = Date.now() + '-' + req.file.originalname;
-      const outputPath = `public/uploads/${filename}`;
-      await sharp(req.file.buffer)
-        .resize(300, 300)
-        .jpeg({ quality: 80 })
-        .toFile(outputPath);
-      photoPath = '/uploads/' + filename;
-    }
-
-    const newUser = new User({ nickname, email, password, description, photo: photoPath });
-    await newUser.save();
-    res.redirect(`/profile.html?email=${email}`);
-  } catch (err) {
-    console.error('Errore registrazione:', err);
-    res.status(500).send('Errore nella registrazione.');
+// Multer storage per upload foto
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = 'public/uploads/';
+    fs.mkdirSync(uploadPath, { recursive: true });
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, ''));
   }
 });
+const upload = multer({ storage: storage });
 
+// Route Registrazione
+app.post('/signup', upload.single('photo'), async (req, res) => {
+  const { nickname, email, password, description } = req.body;
+  let photoPath = '/images/default-profile.png';
+
+  if (req.file) {
+    const outputPath = 'public/uploads/' + 'resized-' + req.file.filename;
+
+    await sharp(req.file.path)
+      .resize(300, 300)
+      .toFile(outputPath);
+
+    fs.unlinkSync(req.file.path);
+
+    photoPath = '/uploads/resized-' + req.file.filename;
+  }
+
+  const newUser = new User({ nickname, email, password, description, photo: photoPath });
+  await newUser.save();
+  res.redirect('/login.html');
+});
+
+// Route Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email, password });
   if (user) {
-    res.redirect(`/profile.html?email=${email}`);
+    res.redirect('/index.html');
   } else {
-    res.send('Email o password sbagliata!');
+    res.send('Email o password errata.');
   }
 });
 
+// Get profile data
 app.get('/profile-data', async (req, res) => {
   const { email } = req.query;
   const user = await User.findOne({ email });
+
   if (user) {
     res.json({
       nickname: user.nickname,
@@ -99,17 +113,25 @@ app.get('/profile-data', async (req, res) => {
   }
 });
 
-app.get('/list-users', async (req, res) => {
-  const users = await User.find({});
-  const sanitizedUsers = users.map(user => ({
-    nickname: user.nickname,
-    description: user.description,
-    photo: user.photo,
-    isVIP: user.isVIP
-  }));
-  res.json(sanitizedUsers);
+// Get nickname
+app.get('/get-nickname', async (req, res) => {
+  const { email } = req.query;
+  const user = await User.findOne({ email });
+
+  if (user) {
+    res.json({ nickname: user.nickname });
+  } else {
+    res.status(404).send('Nickname non trovato');
+  }
 });
 
+// Lista utenti
+app.get('/list-users', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+// Invia un messaggio
 app.post('/send-message', async (req, res) => {
   const { sender, receiver, text } = req.body;
   const newMessage = new Message({ sender, receiver, text });
@@ -117,6 +139,7 @@ app.post('/send-message', async (req, res) => {
   res.sendStatus(200);
 });
 
+// Ottieni i messaggi
 app.get('/get-messages', async (req, res) => {
   const { sender, receiver } = req.query;
   const messages = await Message.find({
@@ -128,23 +151,28 @@ app.get('/get-messages', async (req, res) => {
   res.json(messages);
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Mi Piace
+app.post('/like', async (req, res) => {
+  const { sender, receiver } = req.body;
 
-// Avvio server
-// Ritorna il nickname dato l'email
-app.get('/get-nickname', async (req, res) => {
-  const email = req.query.email;
-  const user = await User.findOne({ email });
-
+  const user = await User.findOne({ nickname: receiver });
   if (user) {
-    res.json({ nickname: user.nickname });
+    if (!user.likes.includes(sender)) {
+      user.likes.push(sender);
+      await user.save();
+    }
+    res.send('Like inviato!');
   } else {
     res.status(404).send('Utente non trovato');
   }
 });
 
+// Home route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Avvio server
 app.listen(PORT, () => {
   console.log(`Server avviato su http://localhost:${PORT}`);
 });
