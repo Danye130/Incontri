@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat - Incontri</title>
+  <title>Chat Privata - Incontri</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -23,16 +23,16 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const receiver = params.get('receiver');
-    const sender = localStorage.getItem('userNickname');
+    const receiverEmail = params.get('receiverEmail');
+    const senderEmail = localStorage.getItem('userEmail');
 
-    if (!sender || !receiver) {
+    if (!senderEmail || !receiverEmail) {
       alert('Errore: dati mancanti!');
       window.location.href = 'login.html';
     }
 
     function loadMessages() {
-      fetch(`https://incontri-backend.onrender.com/get-messages?sender=${sender}&receiver=${receiver}`)
+      fetch(`https://incontri-backend.onrender.com/get-messages?sender=${senderEmail}&receiver=${receiverEmail}`)
         .then(response => response.json())
         .then(messages => {
           const chatBox = document.getElementById('chat-box');
@@ -40,7 +40,7 @@
 
           messages.forEach(msg => {
             const p = document.createElement('p');
-            p.className = msg.sender === sender ? 'message-sent' : 'message-received';
+            p.className = msg.sender === senderEmail ? 'message-sent' : 'message-received';
             p.textContent = `${msg.sender}: ${msg.text}`;
             chatBox.appendChild(p);
           });
@@ -57,7 +57,7 @@
       fetch('https://incontri-backend.onrender.com/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender, receiver, text })
+        body: JSON.stringify({ sender: senderEmail, receiver: receiverEmail, text })
       })
       .then(() => {
         document.getElementById('messageInput').value = '';
@@ -66,7 +66,6 @@
       .catch(err => console.error('Errore invio messaggio:', err));
     });
 
-    // Aggiorna la chat ogni 3 secondi
     setInterval(loadMessages, 3000);
     loadMessages();
   </script>

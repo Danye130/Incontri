@@ -3,32 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Benvenuto su Incontri</title>
+  <title>Home - Incontri</title>
   <link rel="stylesheet" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container center-content">
-    <h1 class="home-title">Benvenuto su Incontri ❤️</h1>
-    <p class="home-subtitle">Incontra nuove persone e vivi nuove emozioni!</p>
+    <h1>Benvenuto su Incontri</h1>
 
-    <div id="home-buttons" class="home-buttons">
-      <a href="signup.html" class="btn">Registrati</a>
-      <a href="login.html" class="btn">Accedi</a>
+    <div class="home-buttons">
+      <a href="signup.html" class="btn" id="signupBtn">Registrati</a>
+      <a href="login.html" class="btn" id="loginBtn">Accedi</a>
+      <a href="profile.html" class="btn hidden" id="profileBtn">Il Mio Profilo</a>
+      <a href="utenti.html" class="btn hidden" id="usersBtn">Scopri Utenti</a>
+
+      <!-- Busta messaggi -->
+      <button id="messagesBtn" class="btn hidden">📩 Messaggi <span id="msg-count"></span></button>
+
+      <!-- Campanella like -->
+      <button id="likesBtn" class="btn hidden">🔔 Like Ricevuti</button>
+
+      <button class="btn hidden" id="logoutBtn">Logout</button>
     </div>
   </div>
 
   <script>
-    const nickname = localStorage.getItem('userNickname');
+    const userEmail = localStorage.getItem('userEmail');
+    const userNickname = localStorage.getItem('userNickname');
 
-    if (nickname) {
-      document.getElementById('home-buttons').innerHTML = `
-        <a href="profile.html" class="btn">Il Mio Profilo</a>
-        <a href="utenti.html" class="btn">Scopri Persone</a>
-        <a href="vip.html" class="btn">Diventa VIP 🌟</a>
-        <a href="modifica-profilo.html" class="btn">Modifica Profilo</a>
-      `;
+    if (userEmail) {
+      document.getElementById('signupBtn').style.display = 'none';
+      document.getElementById('loginBtn').style.display = 'none';
+      document.getElementById('profileBtn').classList.remove('hidden');
+      document.getElementById('usersBtn').classList.remove('hidden');
+      document.getElementById('logoutBtn').classList.remove('hidden');
+      document.getElementById('messagesBtn').classList.remove('hidden');
+      document.getElementById('likesBtn').classList.remove('hidden');
+
+      // Carica messaggi non letti
+      function loadUnreadMessages() {
+        fetch(`https://incontri-backend.onrender.com/unread-messages?receiver=${userEmail}`)
+          .then(response => response.json())
+          .then(data => {
+            const count = data.count;
+            const msgCount = document.getElementById('msg-count');
+            if (count > 0) {
+              msgCount.textContent = `(${count})`;
+              msgCount.style.color = 'red';
+            } else {
+              msgCount.textContent = '';
+            }
+          })
+          .catch(err => console.error('Errore caricamento messaggi:', err));
+      }
+
+      setInterval(loadUnreadMessages, 3000);
+      loadUnreadMessages();
+
+      // Controlla like ricevuti
+      function loadLikes() {
+        fetch('https://incontri-backend.onrender.com/list-users')
+          .then(response => response.json())
+          .then(users => {
+            const me = users.find(u => u.email === userEmail);
+            if (me && me.likes.length > 0) {
+              document.getElementById('likesBtn').style.backgroundColor = '#ffd700';
+            }
+          })
+          .catch(err => console.error('Errore caricamento likes:', err));
+      }
+
+      setInterval(loadLikes, 5000);
+      loadLikes();
     }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.reload();
+    });
+
+    // Click su messaggi
+    document.getElementById('messagesBtn').addEventListener('click', () => {
+      window.location.href = 'utenti.html';
+    });
+
+    // Click su like ricevuti
+    document.getElementById('likesBtn').addEventListener('click', () => {
+      alert('Controlla i tuoi like nei profili!');
+    });
   </script>
 </body>
 </html>
