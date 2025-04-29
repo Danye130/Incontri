@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modifica Profilo - Incontri</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container center-content">
+    <h1>Modifica Profilo</h1>
+
+    <form id="updateForm" action="/update-profile" method="POST" enctype="multipart/form-data">
+      <input type="text" name="nickname" placeholder="Nuovo Nickname" required><br>
+      <textarea name="description" placeholder="Nuova Descrizione" required></textarea><br>
+      <input type="password" name="password" placeholder="Nuova Password" required><br>
+      <input type="file" name="photo" accept="image/*"><br>
+      <button type="submit" class="btn">Aggiorna Profilo</button>
+    </form>
+
+    <a href="profile.html" class="btn">Torna al Profilo</a>
+  </div>
+
+  <script>
+    const email = localStorage.getItem('userEmail');
+
+    if (!email) {
+      alert('Devi accedere prima.');
+      window.location.href = 'login.html';
+    }
+
+    const form = document.getElementById('updateForm');
+
+    form.addEventListener('submit', (e) => {
+      const hiddenEmailInput = document.createElement('input');
+      hiddenEmailInput.type = 'hidden';
+      hiddenEmailInput.name = 'email';
+      hiddenEmailInput.value = email;
+      form.appendChild(hiddenEmailInput);
+    });
+  </script>
+</body>
+</html>
