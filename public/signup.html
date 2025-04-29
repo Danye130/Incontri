@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registrati - Incontri</title>
   <link rel="stylesheet" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
+  <div class="container center-content">
     <h1>Registrati</h1>
-    <form action="/signup" method="POST" enctype="multipart/form-data">
+    <form id="signupForm" action="/signup" method="POST" enctype="multipart/form-data">
       <input type="text" name="nickname" placeholder="Scegli un Nickname" required><br>
       <input type="email" name="email" placeholder="Email" required><br>
       <input type="password" name="password" placeholder="Password" required><br>
-      <textarea name="description" placeholder="Descriviti..." required></textarea><br>
+      <textarea name="description" placeholder="Parlaci di te..." required></textarea><br>
       <input type="file" name="photo" accept="image/*" required><br>
       <button type="submit" class="btn">Registrati</button>
     </form>
-    <p><a href="login.html">Hai già un account? Accedi!</a></p>
+
+    <p><a href="login.html" class="link">Hai già un account? Accedi!</a></p>
   </div>
 
   <script>
-    const signupForm = document.querySelector('form');
+    const form = document.getElementById('signupForm');
 
-    signupForm.addEventListener('submit', () => {
-      const emailInput = document.querySelector('input[name="email"]').value;
-      localStorage.setItem('userEmail', emailInput); // Salva email su localStorage
+    form.addEventListener('submit', (e) => {
+      const email = form.querySelector('input[name="email"]').value;
+      localStorage.setItem('userEmail', email);
     });
   </script>
 </body>
