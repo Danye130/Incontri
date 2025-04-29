@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Accedi - Incontri</title>
   <link rel="stylesheet" href="css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
     <h1>Accedi</h1>
-    <form action="/login" method="POST">
+    <form id="loginForm" action="/login" method="POST">
       <input type="email" name="email" placeholder="Email" required><br>
       <input type="password" name="password" placeholder="Password" required><br>
       <button type="submit" class="btn">Accedi</button>
@@ -19,11 +18,24 @@
   </div>
 
   <script>
-    const loginForm = document.querySelector('form');
+    const form = document.getElementById('loginForm');
 
-    loginForm.addEventListener('submit', () => {
-      const emailInput = document.querySelector('input[name="email"]').value;
-      localStorage.setItem('userEmail', emailInput); // Salva email nel localStorage
+    form.addEventListener('submit', async (e) => {
+      const email = form.querySelector('input[name="email"]').value;
+
+      // Salva email
+      localStorage.setItem('userEmail', email);
+
+      // Richiedi nickname
+      try {
+        const res = await fetch(`https://incontri-backend.onrender.com/get-nickname?email=${email}`);
+        const data = await res.json();
+        if (data.nickname) {
+          localStorage.setItem('userNickname', data.nickname);
+        }
+      } catch (err) {
+        console.error('Errore recupero nickname', err);
+      }
     });
   </script>
 </body>
