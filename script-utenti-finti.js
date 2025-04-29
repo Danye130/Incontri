@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const faker = require('faker');
+const { faker } = require('@faker-js/faker');  // <-- NOTA QUESTO CAMBIAMENTO!
 
 mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
