@@ -1,115 +1,120 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Scopri Utenti - Incontri</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css" />
   <style>
     .user-card {
+      background: #fff;
       border: 1px solid #ccc;
-      padding: 10px;
+      padding: 15px;
+      border-radius: 12px;
       margin-bottom: 15px;
-      border-radius: 10px;
-      background: #f9f9f9;
       display: flex;
+      gap: 15px;
       align-items: center;
-      gap: 10px;
     }
+
     .user-card img {
       width: 80px;
       height: 80px;
       border-radius: 50%;
       object-fit: cover;
     }
+
     .user-info {
-      flex: 1;
+      flex-grow: 1;
     }
-    .btn-small {
-      margin-top: 5px;
-      margin-right: 5px;
-      padding: 5px 10px;
-      font-size: 0.9em;
+
+    .user-actions button {
+      margin: 5px 5px 0 0;
     }
-    .vip-badge {
-      background-color: gold;
-      color: black;
-      padding: 2px 6px;
-      border-radius: 5px;
-      font-size: 0.8em;
-      margin-left: 5px;
+
+    @media screen and (max-width: 600px) {
+      .user-card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .user-card img {
+        margin-bottom: 10px;
+      }
+
+      .user-actions {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Utenti Registrati</h1>
-    <div id="users-list"></div>
-
-    <br>
-    <a href="index.html" class="btn">Torna alla Home</a>
+    <h1>Scopri Utenti</h1>
+    <div id="users-list">Caricamento...</div>
+    <a href="index.html" class="btn">🏠 Torna alla Home</a>
   </div>
 
   <script>
-    const myEmail = localStorage.getItem('userEmail');
+    const userEmail = localStorage.getItem("userEmail");
 
-    if (!myEmail) {
-      alert('Devi essere loggato per vedere gli utenti.');
-      window.location.href = 'login.html';
+    if (!userEmail) {
+      alert("Non sei loggato.");
+      window.location.href = "login.html";
     }
 
-    fetch('https://incontri-backend.onrender.com/list-users')
+    fetch("https://incontri-backend.onrender.com/list-users")
       .then(res => res.json())
       .then(users => {
-        const container = document.getElementById('users-list');
+        const container = document.getElementById("users-list");
+        container.innerHTML = "";
+
+        const me = users.find(u => u.email === userEmail);
+        const senderNickname = me?.nickname || "";
+
         users
-          .filter(user => user.email !== myEmail) // non mostrare se stesso
+          .filter(user => user.email !== userEmail)
           .forEach(user => {
-            const card = document.createElement('div');
-            card.className = 'user-card';
+            const div = document.createElement("div");
+            div.className = "user-card";
 
-            const img = document.createElement('img');
-            img.src = user.photo || '/images/default-profile.jpg';
-            card.appendChild(img);
-
-            const info = document.createElement('div');
-            info.className = 'user-info';
-
-            const nickname = document.createElement('p');
-            nickname.innerHTML = `<strong>${user.nickname}</strong>` + (user.isVIP ? ' <span class="vip-badge">VIP</span>' : '');
-            info.appendChild(nickname);
-
-            const descr = document.createElement('p');
-            descr.textContent = user.description || 'Nessuna descrizione';
-            info.appendChild(descr);
-
-            const chatBtn = document.createElement('a');
-            chatBtn.href = `chat.html?receiverEmail=${user.email}`;
-            chatBtn.className = 'btn btn-small';
-            chatBtn.textContent = '💬 Chat';
-            info.appendChild(chatBtn);
-
-            const likeBtn = document.createElement('button');
-            likeBtn.className = 'btn btn-small';
-            likeBtn.textContent = '❤️ Mi Piace';
-            likeBtn.onclick = () => {
-              fetch('https://incontri-backend.onrender.com/like', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sender: myEmail, receiver: user.nickname })
-              })
-              .then(() => alert('Hai messo Mi Piace!'))
-              .catch(err => console.error('Errore like:', err));
-            };
-            info.appendChild(likeBtn);
-
-            card.appendChild(info);
-            container.appendChild(card);
+            div.innerHTML = `
+              <img src="${user.photo}" alt="${user.nickname}" />
+              <div class="user-info">
+                <strong>${user.nickname}</strong><br/>
+                <small>${user.description || "Nessuna descrizione"}</small><br/>
+                ${user.isVIP ? "<span style='color:gold;'>⭐ VIP</span>" : ""}
+              </div>
+              <div class="user-actions">
+                <a href="chat.html?receiverEmail=${user.email}" class="btn">💬 Messaggio</a>
+                <button class="btn like-btn" data-email="${user.email}"❤️ Like</button>
+              </div>
+            `;
+            container.appendChild(div);
           });
+
+        // Like handler
+        document.querySelectorAll(".like-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const receiverEmail = btn.dataset.email;
+            fetch("https://incontri-backend.onrender.com/like", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                senderNickname,
+                receiverEmail
+              })
+            })
+            .then(() => alert("Like inviato!"))
+            .catch(() => alert("Errore invio like."));
+          });
+        });
       })
       .catch(err => {
-        console.error('Errore caricamento utenti:', err);
-        alert('Errore nel caricamento degli utenti.');
+        console.error("Errore caricamento utenti:", err);
+        document.getElementById("users-list").innerHTML = "<p>Errore nel caricamento utenti.</p>";
       });
   </script>
 </body>
