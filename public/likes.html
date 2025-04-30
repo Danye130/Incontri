@@ -46,10 +46,15 @@
       window.location.href = 'login.html';
     }
 
-    fetch(`https://incontri-backend.onrender.com/list-users`)
+    fetch('https://incontri-backend.onrender.com/list-users')
       .then(res => res.json())
       .then(users => {
         const myUser = users.find(u => u.email === email);
+        if (!myUser || !myUser.nickname) {
+          document.getElementById('likes-list').innerHTML = '<p>Errore: profilo non valido.</p>';
+          return;
+        }
+
         const likers = users.filter(u => u.likes && u.likes.includes(myUser.nickname));
 
         const container = document.getElementById('likes-list');
@@ -78,7 +83,7 @@
             const chatBtn = document.createElement('a');
             chatBtn.href = `chat.html?receiverEmail=${user.email}`;
             chatBtn.className = 'btn btn-small';
-            chatBtn.textContent = '💬 Chatta con loro';
+            chatBtn.textContent = '💬 Chat';
             info.appendChild(chatBtn);
 
             card.appendChild(info);
