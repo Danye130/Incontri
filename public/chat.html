@@ -3,75 +3,139 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Messaggi Ricevuti</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Chat - Incontri</title>
+  <link rel="stylesheet" href="css/style.css" />
   <style>
-    .user-card {
+    .chat-container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
       background: #f9f9f9;
-      padding: 15px;
-      margin-bottom: 10px;
       border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
-    .user-card strong {
-      font-size: 1.1em;
+    #messages {
+      height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
     }
-    .user-card .btn {
-      padding: 5px 10px;
-      font-size: 0.9em;
+    #messages p {
+      margin: 6px 0;
+      padding: 6px;
+      border-radius: 8px;
+    }
+    .me { background: #d1e7ff; text-align: right; }
+    .them { background: #eee; text-align: left; }
+
+    .receiver-header {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .receiver-header img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 5px;
+    }
+
+    @media screen and (max-width: 600px) {
+      .chat-container {
+        padding: 10px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Messaggi Ricevuti</h1>
-    <div id="message-list">Caricamento...</div>
-    <a href="index.html" class="btn">🏠 Torna alla Home</a>
+  <div class="container chat-container">
+    <div class="receiver-header">
+      <img id="receiver-photo" src="" alt="Foto profilo" />
+      <h2 id="receiver-name">Chat</h2>
+    </div>
+
+    <div id="messages">Caricamento...</div>
+
+    <input type="text" id="messageInput" placeholder="Scrivi un messaggio..." />
+    <button id="sendButton" class="btn">Invia</button>
+
+    <br /><br />
+    <a href="utenti.html" class="btn">← Torna agli utenti</a>
   </div>
 
   <script>
-    const email = localStorage.getItem('userEmail');
-    if (!email) {
-      alert("Non sei loggato.");
-      window.location.href = "login.html";
+    const userEmail = localStorage.getItem("userEmail");
+    const urlParams = new URLSearchParams(window.location.search);
+    const receiverEmail = urlParams.get("receiverEmail");
+
+    if (!userEmail || !receiverEmail) {
+      alert("Errore: dati mancanti.");
+      window.location.href = "index.html";
     }
 
-    fetch("https://incontri-backend.onrender.com/get-messages?receiver=" + email + "&sender=" + email)
-      .then(res => res.json())
-      .then(messages => {
-        const uniqueSenders = {};
-        messages.forEach(msg => {
-          if (msg.receiver === email) {
-            uniqueSenders[msg.sender] = msg;
-          }
-        });
+    const receiverName = document.getElementById("receiver-name");
+    const receiverPhoto = document.getElementById("receiver-photo");
 
-        const list = document.getElementById("message-list");
-        list.innerHTML = "";
-
-        const senders = Object.values(uniqueSenders);
-
-        if (senders.length === 0) {
-          list.innerHTML = "<p>Nessun messaggio ricevuto.</p>";
-          return;
+    async function loadReceiverInfo() {
+      try {
+        const res = await fetch("https://incontri-backend.onrender.com/list-users");
+        const users = await res.json();
+        const receiver = users.find(u => u.email === receiverEmail);
+        if (receiver) {
+          receiverName.textContent = receiver.nickname;
+          receiverPhoto.src = receiver.photo || "/images/default-profile.png";
         }
+      } catch (err) {
+        console.error("Errore caricamento info:", err);
+      }
+    }
 
-        senders.forEach(msg => {
-          const card = document.createElement("div");
-          card.className = "user-card";
-          card.innerHTML = `
-            <strong>${msg.sender}</strong>
-            <a href="chat.html?receiverEmail=${msg.sender}" class="btn">Apri Chat</a>
-          `;
-          list.appendChild(card);
+    async function loadMessages() {
+      try {
+        const res = await fetch(`https://incontri-backend.onrender.com/get-messages?sender=${userEmail}&receiver=${receiverEmail}`);
+        const messages = await res.json();
+        const messagesDiv = document.getElementById("messages");
+        messagesDiv.innerHTML = "";
+
+        messages.forEach(msg => {
+          const p = document.createElement("p");
+          p.className = msg.sender === userEmail ? "me" : "them";
+          p.textContent = msg.text;
+          messagesDiv.appendChild(p);
         });
-      })
-      .catch(err => {
+
+        // Scroll in fondo
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        // Marca come letti
+        await fetch("https://incontri-backend.onrender.com/mark-messages-read", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sender: receiverEmail, receiver: userEmail })
+        });
+      } catch (err) {
         console.error("Errore caricamento messaggi:", err);
-        document.getElementById("message-list").innerHTML = "<p>Errore nel caricamento.</p>";
+      }
+    }
+
+    document.getElementById("sendButton").addEventListener("click", async () => {
+      const text = document.getElementById("messageInput").value;
+      if (!text.trim()) return;
+
+      await fetch("https://incontri-backend.onrender.com/send-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sender: userEmail, receiver: receiverEmail, text })
       });
+
+      document.getElementById("messageInput").value = "";
+      loadMessages();
+    });
+
+    loadReceiverInfo();
+    loadMessages();
+    setInterval(loadMessages, 5000);
   </script>
 </body>
 </html>
