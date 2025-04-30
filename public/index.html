@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home - Incontri</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .msg-alert {
+      color: red;
+      font-weight: bold;
+      margin-left: 5px;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.5; }
+    }
+  </style>
 </head>
 <body>
   <div class="container center-content">
@@ -16,10 +27,12 @@
       <a href="profile.html" class="btn hidden" id="profileBtn">Il Mio Profilo</a>
       <a href="utenti.html" class="btn hidden" id="usersBtn">Scopri Utenti</a>
 
-      <!-- Busta messaggi -->
-      <button id="messagesBtn" class="btn hidden">📩 Messaggi <span id="msg-count"></span></button>
+      <!-- Busta Messaggi -->
+      <button id="messagesBtn" class="btn hidden">
+        📩 Messaggi <span id="msg-alert" class="msg-alert" style="display:none;">●</span>
+      </button>
 
-      <!-- Campanella like -->
+      <!-- Campanella Like -->
       <button id="likesBtn" class="btn hidden">🔔 Like Ricevuti</button>
 
       <button class="btn hidden" id="logoutBtn">Logout</button>
@@ -27,10 +40,9 @@
   </div>
 
   <script>
-    const userEmail = localStorage.getItem('userEmail');
-    const userNickname = localStorage.getItem('userNickname');
+    const email = localStorage.getItem('userEmail');
 
-    if (userEmail) {
+    if (email) {
       document.getElementById('signupBtn').style.display = 'none';
       document.getElementById('loginBtn').style.display = 'none';
       document.getElementById('profileBtn').classList.remove('hidden');
@@ -39,57 +51,35 @@
       document.getElementById('messagesBtn').classList.remove('hidden');
       document.getElementById('likesBtn').classList.remove('hidden');
 
-      // Carica messaggi non letti
-      function loadUnreadMessages() {
-        fetch(`https://incontri-backend.onrender.com/unread-messages?receiver=${userEmail}`)
-          .then(response => response.json())
+      // Check messaggi non letti
+      function checkUnread() {
+        fetch(`https://incontri-backend.onrender.com/unread-messages?receiver=${email}`)
+          .then(res => res.json())
           .then(data => {
-            const count = data.count;
-            const msgCount = document.getElementById('msg-count');
-            if (count > 0) {
-              msgCount.textContent = `(${count})`;
-              msgCount.style.color = 'red';
+            const alert = document.getElementById('msg-alert');
+            if (data.count > 0) {
+              alert.style.display = 'inline';
             } else {
-              msgCount.textContent = '';
+              alert.style.display = 'none';
             }
-          })
-          .catch(err => console.error('Errore caricamento messaggi:', err));
+          });
       }
 
-      setInterval(loadUnreadMessages, 3000);
-      loadUnreadMessages();
-
-      // Controlla like ricevuti
-      function loadLikes() {
-        fetch('https://incontri-backend.onrender.com/list-users')
-          .then(response => response.json())
-          .then(users => {
-            const me = users.find(u => u.email === userEmail);
-            if (me && me.likes.length > 0) {
-              document.getElementById('likesBtn').style.backgroundColor = '#ffd700';
-            }
-          })
-          .catch(err => console.error('Errore caricamento likes:', err));
-      }
-
-      setInterval(loadLikes, 5000);
-      loadLikes();
+      setInterval(checkUnread, 5000);
+      checkUnread();
     }
 
-    // Logout
     document.getElementById('logoutBtn').addEventListener('click', () => {
       localStorage.clear();
       window.location.reload();
     });
 
-    // Click su messaggi
     document.getElementById('messagesBtn').addEventListener('click', () => {
       window.location.href = 'utenti.html';
     });
 
-    // Click su like ricevuti
     document.getElementById('likesBtn').addEventListener('click', () => {
-      alert('Controlla i tuoi like nei profili!');
+      window.location.href = 'likes.html';
     });
   </script>
 </body>
