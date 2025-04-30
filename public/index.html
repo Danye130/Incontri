@@ -12,6 +12,7 @@
       margin-left: 6px;
       animation: blink 1s infinite;
     }
+
     @keyframes blink {
       50% { opacity: 0.2; }
     }
@@ -32,20 +33,20 @@
 </head>
 <body>
   <div class="container center-content">
-    <h1>Benvenuto su Incontri</h1>
+    <h1>Benvenuto su <span class="vip-badge">Incontri</span></h1>
 
     <div class="home-buttons">
-      <a href="signup.html" class="btn" id="signupBtn">Registrati</a>
-      <a href="login.html" class="btn" id="loginBtn">Accedi</a>
-      <a href="profile.html" class="btn hidden" id="profileBtn">Profilo</a>
-      <a href="utenti.html" class="btn hidden" id="usersBtn">Scopri Utenti</a>
+      <a href="signup.html" class="btn" id="signupBtn">📝 Registrati</a>
+      <a href="login.html" class="btn" id="loginBtn">🔐 Accedi</a>
+      <a href="profile.html" class="btn hidden" id="profileBtn">👤 Profilo</a>
+      <a href="utenti.html" class="btn hidden" id="usersBtn">🔍 Scopri Utenti</a>
 
       <button id="messagesBtn" class="btn hidden">
         📩 Messaggi <span id="msg-alert" class="msg-alert" style="display: none;">●</span>
       </button>
 
-      <button id="likesBtn" class="btn hidden">🔔 Like Ricevuti</button>
-      <button class="btn hidden" id="logoutBtn">Logout</button>
+      <button id="likesBtn" class="btn hidden">❤️ Like Ricevuti</button>
+      <button class="btn hidden" id="logoutBtn">🚪 Logout</button>
     </div>
   </div>
 
@@ -61,7 +62,6 @@
       document.getElementById("messagesBtn").classList.remove("hidden");
       document.getElementById("likesBtn").classList.remove("hidden");
 
-      // Controlla messaggi non letti ogni 5 secondi
       function checkUnreadMessages() {
         fetch(`https://incontri-backend.onrender.com/unread-messages?receiver=${email}`)
           .then(res => res.json())
@@ -76,14 +76,13 @@
       setInterval(checkUnreadMessages, 5000);
     }
 
-    // Bottoni
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.clear();
       window.location.reload();
     });
 
     document.getElementById("messagesBtn").addEventListener("click", () => {
-      window.location.href = "messaggi.html"; // ✅ Ora porta alla pagina corretta
+      window.location.href = "messaggi.html";
     });
 
     document.getElementById("likesBtn").addEventListener("click", () => {
