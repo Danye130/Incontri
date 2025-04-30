@@ -4,7 +4,7 @@ const multer = require('multer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const sharp = require('sharp');
-const stripe = require('stripe')('sk_test_1234567890abcdef'); // tua chiave di test Stripe
+const stripe = require('stripe')('sk_test_1234567890abcdef'); // Sostituisci con la tua chiave reale
 const path = require('path');
 const fs = require('fs');
 
@@ -26,8 +26,6 @@ mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.
 .catch((err) => console.error('Errore MongoDB ❌', err));
 
 // Schemi Mongoose
-
-// User
 const UserSchema = new mongoose.Schema({
   nickname: String,
   email: String,
@@ -39,7 +37,6 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
-// Message
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -62,7 +59,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Rotte
+// ROTTE
 
 // Registrazione
 app.post('/signup', upload.single('photo'), async (req, res) => {
@@ -149,13 +146,13 @@ app.post('/mark-messages-read', async (req, res) => {
   res.sendStatus(200);
 });
 
-// Invia Like
+// Invia Like (usando email del ricevente, nickname del mittente)
 app.post('/like', async (req, res) => {
-  const { sender, receiver } = req.body;
-  const user = await User.findOne({ nickname: receiver });
+  const { senderNickname, receiverEmail } = req.body;
+  const user = await User.findOne({ email: receiverEmail });
   if (user) {
-    if (!user.likes.includes(sender)) {
-      user.likes.push(sender);
+    if (!user.likes.includes(senderNickname)) {
+      user.likes.push(senderNickname);
       await user.save();
     }
     res.send('Like inviato!');
@@ -164,7 +161,7 @@ app.post('/like', async (req, res) => {
   }
 });
 
-// Update Profilo
+// Aggiorna profilo
 app.post('/update-profile', upload.single('photo'), async (req, res) => {
   const { email, nickname, description, password } = req.body;
   const user = await User.findOne({ email });
