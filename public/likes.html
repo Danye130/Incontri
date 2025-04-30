@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Like Ricevuti - Incontri</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .user-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      background: #f9f9f9;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-card img {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .user-info {
+      flex: 1;
+    }
+    .btn-small {
+      margin-top: 5px;
+      padding: 5px 10px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Like Ricevuti</h1>
+    <div id="likes-list"></div>
+    <a href="index.html" class="btn">Torna alla Home</a>
+  </div>
+
+  <script>
+    const email = localStorage.getItem('userEmail');
+    if (!email) {
+      alert('Devi essere loggato per vedere i like.');
+      window.location.href = 'login.html';
+    }
+
+    fetch(`https://incontri-backend.onrender.com/list-users`)
+      .then(res => res.json())
+      .then(users => {
+        const myUser = users.find(u => u.email === email);
+        const likers = users.filter(u => u.likes && u.likes.includes(myUser.nickname));
+
+        const container = document.getElementById('likes-list');
+        if (likers.length === 0) {
+          container.innerHTML = '<p>Nessun like ricevuto.</p>';
+        } else {
+          likers.forEach(user => {
+            const card = document.createElement('div');
+            card.className = 'user-card';
+
+            const img = document.createElement('img');
+            img.src = user.photo || '/images/default-profile.jpg';
+            card.appendChild(img);
+
+            const info = document.createElement('div');
+            info.className = 'user-info';
+
+            const name = document.createElement('p');
+            name.innerHTML = `<strong>${user.nickname}</strong>`;
+            info.appendChild(name);
+
+            const descr = document.createElement('p');
+            descr.textContent = user.description || 'Nessuna descrizione';
+            info.appendChild(descr);
+
+            const chatBtn = document.createElement('a');
+            chatBtn.href = `chat.html?receiverEmail=${user.email}`;
+            chatBtn.className = 'btn btn-small';
+            chatBtn.textContent = '💬 Chatta con loro';
+            info.appendChild(chatBtn);
+
+            card.appendChild(info);
+            container.appendChild(card);
+          });
+        }
+      })
+      .catch(err => {
+        console.error('Errore caricamento like:', err);
+        alert('Errore durante il recupero dei like.');
+      });
+  </script>
+</body>
+</html>
