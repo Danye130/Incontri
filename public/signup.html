@@ -7,27 +7,52 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="container center-content">
-    <h1>Registrati</h1>
-
-    <form id="signupForm" action="/signup" method="POST" enctype="multipart/form-data">
-      <input type="text" name="nickname" placeholder="Scegli un Nickname" required><br>
+  <div class="container">
+    <h1>Crea un account</h1>
+    <form id="signupForm" enctype="multipart/form-data">
+      <input type="text" name="nickname" placeholder="Nickname" required><br>
       <input type="email" name="email" placeholder="Email" required><br>
       <input type="password" name="password" placeholder="Password" required><br>
-      <textarea name="description" placeholder="Descriviti..." required></textarea><br>
-      <input type="file" name="photo" accept="image/*" required><br>
+      <textarea name="description" placeholder="Descrizione" rows="3"></textarea><br>
+      <label>Foto profilo:</label><br>
+      <input type="file" name="photo" accept="image/*"><br><br>
       <button type="submit" class="btn">Registrati</button>
     </form>
-
-    <p><a href="login.html" class="link">Hai già un account? Accedi!</a></p>
+    <p id="msg" style="color:green;"></p>
+    <p><a href="login.html">Hai già un account? Accedi!</a></p>
   </div>
 
   <script>
     const form = document.getElementById('signupForm');
+    const msg = document.getElementById('msg');
 
-    form.addEventListener('submit', (e) => {
-      const email = form.querySelector('input[name="email"]').value;
-      localStorage.setItem('userEmail', email);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+
+      fetch('https://incontri-backend.onrender.com/signup', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => {
+        if (res.ok) {
+          const email = formData.get('email');
+          localStorage.setItem('userEmail', email);
+          msg.textContent = "✅ Registrazione completata! Verrai reindirizzato...";
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 2000);
+        } else {
+          msg.style.color = 'red';
+          msg.textContent = "❌ Errore durante la registrazione.";
+        }
+      })
+      .catch(err => {
+        console.error('Errore signup:', err);
+        msg.style.color = 'red';
+        msg.textContent = "❌ Errore durante la registrazione.";
+      });
     });
   </script>
 </body>
