@@ -1,58 +1,22 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chat - Incontri</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    #messages {
-      border: 1px solid #ccc;
-      height: 300px;
-      overflow-y: auto;
-      margin-bottom: 10px;
-      padding: 10px;
-      background: #f1f1f1;
-    }
-    #messageInput {
-      width: 75%;
-      padding: 10px;
-      font-size: 16px;
-    }
-    #sendButton {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .message {
-      margin: 5px 0;
-      padding: 5px 10px;
-      border-radius: 10px;
-      max-width: 80%;
-    }
-    .message.sent {
-      background-color: #d1e7dd;
-      align-self: flex-end;
-    }
-    .message.received {
-      background-color: #f8d7da;
-      align-self: flex-start;
-    }
-    .message-container {
-      display: flex;
-      flex-direction: column;
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="container">
+  <div class="container center-content">
     <h1>Chat</h1>
-    <div id="messages" class="message-container">Caricamento...</div>
+    <div id="messages" class="chat-box">Caricamento messaggi...</div>
 
-    <input type="text" id="messageInput" placeholder="Scrivi un messaggio...">
-    <button id="sendButton">Invia</button>
+    <div style="margin-top: 15px;">
+      <input type="text" id="messageInput" placeholder="Scrivi un messaggio..." />
+      <button id="sendButton" class="btn">Invia</button>
+    </div>
 
-    <br><br>
+    <br>
     <a href="index.html" class="btn">🏠 Torna alla Home</a>
   </div>
 
@@ -73,46 +37,30 @@
           const messagesDiv = document.getElementById('messages');
           messagesDiv.innerHTML = '';
           messages.forEach(msg => {
-            const p = document.createElement('div');
-            p.classList.add('message');
-            p.classList.add(msg.sender === email ? 'sent' : 'received');
+            const p = document.createElement('p');
+            p.className = msg.sender === email ? 'message-sent' : 'message-received';
             p.textContent = `${msg.sender === email ? 'Tu' : msg.sender}: ${msg.text}`;
             messagesDiv.appendChild(p);
           });
-
-          // Scorri in fondo
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
         })
         .catch(err => console.error('Errore caricamento messaggi:', err));
-
-      // Marca come letti i messaggi ricevuti
-      fetch('https://incontri-backend.onrender.com/mark-messages-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: receiverEmail, receiver: email })
-      }).catch(err => console.error('Errore update messaggi letti:', err));
     }
 
-    document.getElementById('sendButton').addEventListener('click', sendMessage);
-    document.getElementById('messageInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-
-    function sendMessage() {
-      const text = document.getElementById('messageInput').value.trim();
+    document.getElementById('sendButton').addEventListener('click', () => {
+      const text = document.getElementById('messageInput').value;
       if (!text) return;
-
       fetch('https://incontri-backend.onrender.com/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sender: email, receiver: receiverEmail, text })
       })
-        .then(() => {
-          document.getElementById('messageInput').value = '';
-          loadMessages();
-        })
-        .catch(err => console.error('Errore invio messaggio:', err));
-    }
+      .then(() => {
+        document.getElementById('messageInput').value = '';
+        loadMessages();
+      })
+      .catch(err => console.error('Errore invio messaggio:', err));
+    });
 
     loadMessages();
     setInterval(loadMessages, 5000);
