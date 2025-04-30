@@ -15,6 +15,19 @@
     @keyframes blink {
       50% { opacity: 0.2; }
     }
+
+    @media screen and (max-width: 600px) {
+      .home-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+      }
+      .home-buttons .btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -48,31 +61,29 @@
       document.getElementById("messagesBtn").classList.remove("hidden");
       document.getElementById("likesBtn").classList.remove("hidden");
 
-      function checkUnread() {
+      // Controlla messaggi non letti ogni 5 secondi
+      function checkUnreadMessages() {
         fetch(`https://incontri-backend.onrender.com/unread-messages?receiver=${email}`)
           .then(res => res.json())
           .then(data => {
             const alertDot = document.getElementById("msg-alert");
-            if (data.count > 0) {
-              alertDot.style.display = "inline";
-            } else {
-              alertDot.style.display = "none";
-            }
+            alertDot.style.display = data.count > 0 ? "inline" : "none";
           })
           .catch(err => console.error("Errore controllo messaggi:", err));
       }
 
-      setInterval(checkUnread, 5000);
-      checkUnread();
+      checkUnreadMessages();
+      setInterval(checkUnreadMessages, 5000);
     }
 
+    // Bottoni
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.clear();
       window.location.reload();
     });
 
     document.getElementById("messagesBtn").addEventListener("click", () => {
-      window.location.href = "utenti.html";
+      window.location.href = "messaggi.html"; // ✅ ora porta alla pagina corretta
     });
 
     document.getElementById("likesBtn").addEventListener("click", () => {

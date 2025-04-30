@@ -3,88 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Like Ricevuti - Incontri</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <title>Like Ricevuti</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
     .user-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px;
-      margin-bottom: 15px;
-      background: #f4f4f4;
-      border-radius: 12px;
-    }
-    .user-card img {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    .user-info {
-      flex: 1;
-    }
-    .btn-small {
-      padding: 5px 10px;
-      font-size: 0.9em;
+      background: #f2f2f2;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Like Ricevuti</h1>
-    <div id="likes-list"></div>
+    <h1>🔔 Like Ricevuti</h1>
+    <div id="likes-list">Caricamento...</div>
     <a href="index.html" class="btn">🏠 Torna alla Home</a>
   </div>
 
   <script>
     const email = localStorage.getItem("userEmail");
     if (!email) {
-      alert("Devi essere loggato per vedere i like ricevuti.");
+      alert("Non sei loggato");
       window.location.href = "login.html";
     }
+
+    let currentNickname = "";
 
     fetch("https://incontri-backend.onrender.com/list-users")
       .then(res => res.json())
       .then(users => {
-        const currentUser = users.find(u => u.email === email);
-        if (!currentUser || !currentUser.nickname) {
-          document.getElementById("likes-list").innerHTML = "<p>Errore profilo.</p>";
+        const me = users.find(u => u.email === email);
+        if (!me || !me.nickname) return;
+
+        currentNickname = me.nickname;
+        const likers = users.filter(u => u.likes.includes(currentNickname));
+
+        const box = document.getElementById("likes-list");
+        box.innerHTML = "";
+
+        if (likers.length === 0) {
+          box.innerHTML = "<p>Nessun like ricevuto.</p>";
           return;
         }
 
-        const nickname = currentUser.nickname;
-        const likers = users.filter(u => u.likes && u.likes.includes(nickname));
-
-        const container = document.getElementById("likes-list");
-
-        if (likers.length === 0) {
-          container.innerHTML = "<p>Nessun like ricevuto.</p>";
-        } else {
-          likers.forEach(user => {
-            const card = document.createElement("div");
-            card.className = "user-card";
-
-            const img = document.createElement("img");
-            img.src = user.photo || "/images/default-profile.png";
-
-            const info = document.createElement("div");
-            info.className = "user-info";
-
-            info.innerHTML = `
-              <strong>${user.nickname}</strong><br/>
-              <small>${user.description || "Nessuna descrizione"}</small><br/>
-              <a href="chat.html?receiverEmail=${user.email}" class="btn btn-small">💬 Chat</a>
-            `;
-
-            card.appendChild(img);
-            card.appendChild(info);
-            container.appendChild(card);
-          });
-        }
+        likers.forEach(user => {
+          const div = document.createElement("div");
+          div.className = "user-card";
+          div.innerHTML = `
+            <strong>${user.nickname}</strong><br/>
+            <small>${user.description || ""}</small><br/>
+            <a href="chat.html?receiverEmail=${user.email}" class="btn">💬 Chat</a>
+          `;
+          box.appendChild(div);
+        });
       })
-      .catch(err => {
-        console.error("Errore nel caricamento like:", err);
+      .catch(() => {
         document.getElementById("likes-list").innerHTML = "<p>Errore caricamento.</p>";
       });
   </script>

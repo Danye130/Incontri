@@ -1,73 +1,77 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Privata - Incontri</title>
-  <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Messaggi Ricevuti</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .user-card {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .user-card strong {
+      font-size: 1.1em;
+    }
+    .user-card .btn {
+      padding: 5px 10px;
+      font-size: 0.9em;
+    }
+  </style>
 </head>
 <body>
-  <div class="container center-content">
-    <h1>Chat Privata</h1>
-
-    <div id="chat-box" class="chat-box"></div>
-
-    <form id="chat-form">
-      <input type="text" id="messageInput" placeholder="Scrivi un messaggio..." required>
-      <button type="submit" class="btn">Invia</button>
-    </form>
-
-    <br>
-    <a href="utenti.html" class="btn">Torna agli Utenti</a>
+  <div class="container">
+    <h1>Messaggi Ricevuti</h1>
+    <div id="message-list">Caricamento...</div>
+    <a href="index.html" class="btn">🏠 Torna alla Home</a>
   </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const receiverEmail = params.get('receiverEmail');
-    const senderEmail = localStorage.getItem('userEmail');
-
-    if (!senderEmail || !receiverEmail) {
-      alert('Errore: dati mancanti!');
-      window.location.href = 'login.html';
+    const email = localStorage.getItem('userEmail');
+    if (!email) {
+      alert("Non sei loggato.");
+      window.location.href = "login.html";
     }
 
-    function loadMessages() {
-      fetch(`https://incontri-backend.onrender.com/get-messages?sender=${senderEmail}&receiver=${receiverEmail}`)
-        .then(response => response.json())
-        .then(messages => {
-          const chatBox = document.getElementById('chat-box');
-          chatBox.innerHTML = '';
+    fetch("https://incontri-backend.onrender.com/get-messages?receiver=" + email + "&sender=" + email)
+      .then(res => res.json())
+      .then(messages => {
+        const uniqueSenders = {};
+        messages.forEach(msg => {
+          if (msg.receiver === email) {
+            uniqueSenders[msg.sender] = msg;
+          }
+        });
 
-          messages.forEach(msg => {
-            const p = document.createElement('p');
-            p.className = msg.sender === senderEmail ? 'message-sent' : 'message-received';
-            p.textContent = `${msg.sender}: ${msg.text}`;
-            chatBox.appendChild(p);
-          });
+        const list = document.getElementById("message-list");
+        list.innerHTML = "";
 
-          chatBox.scrollTop = chatBox.scrollHeight;
-        })
-        .catch(err => console.error('Errore caricamento messaggi:', err));
-    }
+        const senders = Object.values(uniqueSenders);
 
-    document.getElementById('chat-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const text = document.getElementById('messageInput').value;
+        if (senders.length === 0) {
+          list.innerHTML = "<p>Nessun messaggio ricevuto.</p>";
+          return;
+        }
 
-      fetch('https://incontri-backend.onrender.com/send-message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender: senderEmail, receiver: receiverEmail, text })
+        senders.forEach(msg => {
+          const card = document.createElement("div");
+          card.className = "user-card";
+          card.innerHTML = `
+            <strong>${msg.sender}</strong>
+            <a href="chat.html?receiverEmail=${msg.sender}" class="btn">Apri Chat</a>
+          `;
+          list.appendChild(card);
+        });
       })
-      .then(() => {
-        document.getElementById('messageInput').value = '';
-        loadMessages();
-      })
-      .catch(err => console.error('Errore invio messaggio:', err));
-    });
-
-    setInterval(loadMessages, 3000);
-    loadMessages();
+      .catch(err => {
+        console.error("Errore caricamento messaggi:", err);
+        document.getElementById("message-list").innerHTML = "<p>Errore nel caricamento.</p>";
+      });
   </script>
 </body>
 </html>
