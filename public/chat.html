@@ -9,31 +9,51 @@
     #messages {
       border: 1px solid #ccc;
       height: 300px;
-      overflow-y: scroll;
+      overflow-y: auto;
       margin-bottom: 10px;
       padding: 10px;
-      background: #f9f9f9;
+      background: #f1f1f1;
     }
     #messageInput {
-      width: 80%;
+      width: 75%;
       padding: 10px;
+      font-size: 16px;
     }
     #sendButton {
       padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .message {
+      margin: 5px 0;
+      padding: 5px 10px;
+      border-radius: 10px;
+      max-width: 80%;
+    }
+    .message.sent {
+      background-color: #d1e7dd;
+      align-self: flex-end;
+    }
+    .message.received {
+      background-color: #f8d7da;
+      align-self: flex-start;
+    }
+    .message-container {
+      display: flex;
+      flex-direction: column;
     }
   </style>
 </head>
 <body>
-
   <div class="container">
     <h1>Chat</h1>
-    <div id="messages">Caricamento...</div>
+    <div id="messages" class="message-container">Caricamento...</div>
 
     <input type="text" id="messageInput" placeholder="Scrivi un messaggio...">
     <button id="sendButton">Invia</button>
 
     <br><br>
-    <a href="index.html" class="btn">Torna alla Home</a>
+    <a href="index.html" class="btn">🏠 Torna alla Home</a>
   </div>
 
   <script>
@@ -53,31 +73,49 @@
           const messagesDiv = document.getElementById('messages');
           messagesDiv.innerHTML = '';
           messages.forEach(msg => {
-            const p = document.createElement('p');
-            p.textContent = `${msg.sender}: ${msg.text}`;
+            const p = document.createElement('div');
+            p.classList.add('message');
+            p.classList.add(msg.sender === email ? 'sent' : 'received');
+            p.textContent = `${msg.sender === email ? 'Tu' : msg.sender}: ${msg.text}`;
             messagesDiv.appendChild(p);
           });
+
+          // Scorri in fondo
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
         })
         .catch(err => console.error('Errore caricamento messaggi:', err));
+
+      // Marca come letti i messaggi ricevuti
+      fetch('https://incontri-backend.onrender.com/mark-messages-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: receiverEmail, receiver: email })
+      }).catch(err => console.error('Errore update messaggi letti:', err));
     }
 
-    document.getElementById('sendButton').addEventListener('click', () => {
-      const text = document.getElementById('messageInput').value;
+    document.getElementById('sendButton').addEventListener('click', sendMessage);
+    document.getElementById('messageInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    function sendMessage() {
+      const text = document.getElementById('messageInput').value.trim();
+      if (!text) return;
+
       fetch('https://incontri-backend.onrender.com/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sender: email, receiver: receiverEmail, text })
       })
-      .then(() => {
-        document.getElementById('messageInput').value = '';
-        loadMessages();
-      })
-      .catch(err => console.error('Errore invio messaggio:', err));
-    });
+        .then(() => {
+          document.getElementById('messageInput').value = '';
+          loadMessages();
+        })
+        .catch(err => console.error('Errore invio messaggio:', err));
+    }
 
     loadMessages();
     setInterval(loadMessages, 5000);
   </script>
-
 </body>
 </html>
