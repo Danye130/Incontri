@@ -4,22 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Scopri Utenti - Incontri</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="style.css" />
   <style>
     .user-card {
-      background: #fff;
       border: 1px solid #ccc;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 15px;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
       display: flex;
-      gap: 15px;
+      gap: 10px;
       align-items: center;
     }
 
     .user-card img {
-      width: 80px;
-      height: 80px;
+      width: 70px;
+      height: 70px;
       border-radius: 50%;
       object-fit: cover;
     }
@@ -28,25 +27,10 @@
       flex-grow: 1;
     }
 
-    .user-actions button {
-      margin: 5px 5px 0 0;
-    }
-
-    @media screen and (max-width: 600px) {
-      .user-card {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .user-card img {
-        margin-bottom: 10px;
-      }
-
-      .user-actions {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
+    .btn {
+      padding: 8px 12px;
+      margin-top: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -86,16 +70,15 @@
                 <strong>${user.nickname}</strong><br/>
                 <small>${user.description || "Nessuna descrizione"}</small><br/>
                 ${user.isVIP ? "<span style='color:gold;'>⭐ VIP</span>" : ""}
-              </div>
-              <div class="user-actions">
+                <br>
                 <a href="chat.html?receiverEmail=${user.email}" class="btn">💬 Messaggio</a>
-                <button class="btn like-btn" data-email="${user.email}"❤️ Like</button>
+                <button class="btn like-btn" data-email="${user.email}">❤️ Like</button>
               </div>
             `;
             container.appendChild(div);
           });
 
-        // Like handler
+        // Gestione like
         document.querySelectorAll(".like-btn").forEach(btn => {
           btn.addEventListener("click", () => {
             const receiverEmail = btn.dataset.email;
