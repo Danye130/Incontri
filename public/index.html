@@ -13,7 +13,7 @@
       animation: blink 1s infinite;
     }
     @keyframes blink {
-      50% { opacity: 0.5; }
+      50% { opacity: 0.3; }
     }
   </style>
 </head>
@@ -27,12 +27,10 @@
       <a href="profile.html" class="btn hidden" id="profileBtn">Il Mio Profilo</a>
       <a href="utenti.html" class="btn hidden" id="usersBtn">Scopri Utenti</a>
 
-      <!-- Busta Messaggi -->
       <button id="messagesBtn" class="btn hidden">
         📩 Messaggi <span id="msg-alert" class="msg-alert" style="display:none;">●</span>
       </button>
 
-      <!-- Campanella Like -->
       <button id="likesBtn" class="btn hidden">🔔 Like Ricevuti</button>
 
       <button class="btn hidden" id="logoutBtn">Logout</button>
@@ -51,7 +49,7 @@
       document.getElementById('messagesBtn').classList.remove('hidden');
       document.getElementById('likesBtn').classList.remove('hidden');
 
-      // Check messaggi non letti
+      // Verifica messaggi non letti
       function checkUnread() {
         fetch(`https://incontri-backend.onrender.com/unread-messages?receiver=${email}`)
           .then(res => res.json())
