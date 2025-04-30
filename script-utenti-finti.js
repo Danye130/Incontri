@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 
-// Lista di foto donne disponibili
+// Foto profilo disponibili
 const photos = [
   '/images/donna1.jpg',
   '/images/donna2.jpg',
@@ -31,21 +31,24 @@ const photos = [
 ];
 
 async function createFakeUsers() {
-  await User.deleteMany({}); // Cancella utenti precedenti
+  await User.deleteMany(); // Cancella eventuali utenti precedenti
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 1; i <= 15; i++) {
     const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
+    const nickname = faker.internet.userName().toLowerCase().replace(/[^a-z0-9]/g, '');
     const fakeUser = new User({
-      nickname: faker.internet.userName(),
-      email: faker.internet.email(),
-      password: faker.internet.password(),
+      nickname: nickname,
+      email: `${nickname}@test.com`,
+      password: 'test1234',
       description: faker.lorem.sentence(),
       photo: randomPhoto,
-      isVIP: faker.datatype.boolean()
+      isVIP: faker.datatype.boolean(),
+      likes: []
     });
     await fakeUser.save();
   }
-  console.log('Utenti finti creati con successo ✅');
+
+  console.log('✅ 15 utenti finti creati con successo!');
   mongoose.connection.close();
 }
 
