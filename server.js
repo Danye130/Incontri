@@ -155,6 +155,18 @@ app.post('/mark-messages-read', async (req, res) => {
   res.sendStatus(200);
 });
 
+// Elenco utenti che ti hanno scritto (per messaggi.html)
+app.get('/message-senders', async (req, res) => {
+  const { receiver } = req.query;
+  if (!receiver) return res.status(400).send("Receiver mancante");
+
+  const messages = await Message.find({ receiver });
+  const uniqueSenders = [...new Set(messages.map(m => m.sender))];
+  const users = await User.find({ email: { $in: uniqueSenders } });
+
+  res.json(users);
+});
+
 // Like
 app.post('/like', async (req, res) => {
   const { senderNickname, receiverEmail } = req.body;
@@ -195,7 +207,7 @@ app.post('/update-profile', upload.single('photo'), async (req, res) => {
   }
 });
 
-// Stripe
+// Stripe pagamento VIP
 app.post('/create-checkout-session', async (req, res) => {
   const { priceId } = req.body;
 
