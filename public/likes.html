@@ -4,62 +4,57 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Like Ricevuti</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    .user-card {
-      background: #f2f2f2;
-      padding: 12px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="container">
+  <div class="container center-content">
     <h1>🔔 Like Ricevuti</h1>
-    <div id="likes-list">Caricamento...</div>
+    <div id="likes-list" class="card-grid">Caricamento...</div>
+
+    <br>
     <a href="index.html" class="btn">🏠 Torna alla Home</a>
   </div>
 
   <script>
     const email = localStorage.getItem("userEmail");
+
     if (!email) {
-      alert("Non sei loggato");
+      alert("Non sei loggato.");
       window.location.href = "login.html";
     }
-
-    let currentNickname = "";
 
     fetch("https://incontri-backend.onrender.com/list-users")
       .then(res => res.json())
       .then(users => {
-        const me = users.find(u => u.email === email);
-        if (!me || !me.nickname) return;
+        const list = document.getElementById("likes-list");
+        list.innerHTML = "";
 
-        currentNickname = me.nickname;
-        const likers = users.filter(u => u.likes.includes(currentNickname));
+        const likedUsers = users.filter(u => u.likes.includes(u.nickname) === false && u.likes.includes(localStorage.getItem("userEmail")));
 
-        const box = document.getElementById("likes-list");
-        box.innerHTML = "";
+        const myProfile = users.find(u => u.email === email);
+        const likers = users.filter(u => u.likes.includes(myProfile.nickname));
 
         if (likers.length === 0) {
-          box.innerHTML = "<p>Nessun like ricevuto.</p>";
+          list.innerHTML = "<p>Nessun like ricevuto.</p>";
           return;
         }
 
         likers.forEach(user => {
-          const div = document.createElement("div");
-          div.className = "user-card";
-          div.innerHTML = `
-            <strong>${user.nickname}</strong><br/>
-            <small>${user.description || ""}</small><br/>
-            <a href="chat.html?receiverEmail=${user.email}" class="btn">💬 Chat</a>
+          const card = document.createElement("div");
+          card.className = "card";
+
+          card.innerHTML = `
+            <img src="${user.photo || '/images/default-profile.png'}" class="profile-photo" />
+            <h3>${user.nickname}</h3>
+            <a href="chat.html?receiverEmail=${user.email}" class="btn">💬 Rispondi</a>
           `;
-          box.appendChild(div);
+
+          list.appendChild(card);
         });
       })
-      .catch(() => {
-        document.getElementById("likes-list").innerHTML = "<p>Errore caricamento.</p>";
+      .catch(err => {
+        console.error("Errore caricamento like:", err);
+        document.getElementById("likes-list").innerHTML = "<p>Errore durante il caricamento.</p>";
       });
   </script>
 </body>
