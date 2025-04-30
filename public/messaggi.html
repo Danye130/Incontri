@@ -3,44 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Messaggi Ricevuti</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    .user-card {
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background-color: #f9f9f9;
-    }
-    .user-card img {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    .user-info {
-      flex-grow: 1;
-    }
-    .btn {
-      padding: 8px 12px;
-      background: #007bff;
-      color: white;
-      text-decoration: none;
-      border-radius: 6px;
-    }
-    .btn:hover {
-      background: #0056b3;
-    }
-  </style>
+  <title>Messaggi Ricevuti - Incontri</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="container">
+  <div class="container center-content">
     <h1>Messaggi Ricevuti</h1>
-    <div id="senders-list">Caricamento...</div>
+    <div id="senders-list" class="card-grid">Caricamento...</div>
     <a href="index.html" class="btn">🏠 Torna alla Home</a>
   </div>
 
@@ -65,14 +34,12 @@
 
         users.forEach(user => {
           const div = document.createElement("div");
-          div.className = "user-card";
+          div.className = "card";
 
           div.innerHTML = `
-            <img src="${user.photo || '/images/default-profile.png'}" alt="Foto profilo" />
-            <div class="user-info">
-              <strong>${user.nickname}</strong><br/>
-              <a href="chat.html?receiverEmail=${encodeURIComponent(user.email)}" class="btn">📨 Leggi Messaggi</a>
-            </div>
+            <img src="${user.photo || '/images/default-profile.png'}" class="profile-photo" />
+            <h3>${user.nickname}</h3>
+            <a href="chat.html?receiverEmail=${user.email}" class="btn">📨 Rispondi</a>
           `;
 
           list.appendChild(div);
