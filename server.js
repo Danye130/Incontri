@@ -4,7 +4,7 @@ const multer = require('multer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const sharp = require('sharp');
-const stripe = require('stripe')('sk_test_1234567890abcdef'); // Sostituisci con chiave reale
+const stripe = require('stripe')('sk_test_1234567890abcdef');
 const path = require('path');
 const fs = require('fs');
 
@@ -59,8 +59,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ROTTE
-
+// Registrazione
 app.post('/signup', upload.single('photo'), async (req, res) => {
   const { nickname, email, password, description } = req.body;
   let photoPath = '/images/default-profile.png';
@@ -77,6 +76,7 @@ app.post('/signup', upload.single('photo'), async (req, res) => {
   res.redirect('/login.html');
 });
 
+// Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email, password });
@@ -87,6 +87,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Dati profilo
 app.get('/profile-data', async (req, res) => {
   const { email } = req.query;
   const user = await User.findOne({ email });
@@ -103,11 +104,13 @@ app.get('/profile-data', async (req, res) => {
   }
 });
 
+// Lista utenti
 app.get('/list-users', async (req, res) => {
   const users = await User.find();
   res.json(users);
 });
 
+// Invia messaggio
 app.post('/send-message', async (req, res) => {
   const { sender, receiver, text } = req.body;
   const newMessage = new Message({ sender, receiver, text, read: false });
@@ -115,16 +118,11 @@ app.post('/send-message', async (req, res) => {
   res.sendStatus(200);
 });
 
+// Ottieni messaggi
 app.get('/get-messages', async (req, res) => {
   const { sender, receiver } = req.query;
-
   const filter = sender && receiver
-    ? {
-        $or: [
-          { sender, receiver },
-          { sender: receiver, receiver: sender }
-        ]
-      }
+    ? { $or: [ { sender, receiver }, { sender: receiver, receiver: sender } ] }
     : receiver
     ? { receiver }
     : {};
@@ -133,6 +131,7 @@ app.get('/get-messages', async (req, res) => {
   res.json(messages);
 });
 
+// Messaggi non letti
 app.get('/unread-messages', async (req, res) => {
   const { receiver } = req.query;
   if (!receiver) return res.json({ count: 0 });
@@ -141,12 +140,14 @@ app.get('/unread-messages', async (req, res) => {
   res.json({ count });
 });
 
+// Marca come letti
 app.post('/mark-messages-read', async (req, res) => {
   const { sender, receiver } = req.body;
   await Message.updateMany({ sender, receiver, read: false }, { read: true });
   res.sendStatus(200);
 });
 
+// Elenco utenti che ti hanno scritto (per messaggi.html)
 app.get('/message-senders', async (req, res) => {
   const { receiver } = req.query;
   if (!receiver) return res.status(400).send("Receiver mancante");
@@ -158,6 +159,7 @@ app.get('/message-senders', async (req, res) => {
   res.json(users);
 });
 
+// Like
 app.post('/like', async (req, res) => {
   const { senderNickname, receiverEmail } = req.body;
 
@@ -173,6 +175,7 @@ app.post('/like', async (req, res) => {
   }
 });
 
+// Aggiorna profilo
 app.post('/update-profile', upload.single('photo'), async (req, res) => {
   const { email, nickname, description, password } = req.body;
   const user = await User.findOne({ email });
@@ -196,6 +199,7 @@ app.post('/update-profile', upload.single('photo'), async (req, res) => {
   }
 });
 
+// Stripe pagamento VIP
 app.post('/create-checkout-session', async (req, res) => {
   const { priceId } = req.body;
 
@@ -217,29 +221,28 @@ app.post('/create-checkout-session', async (req, res) => {
   res.json({ id: session.id });
 });
 
-// ✅ Crea nuovo utente da dashboard
+// ✅ NUOVO — Crea profilo via API
 app.post('/create-user', async (req, res) => {
-  const { nickname, email, password, photo, description, isVIP } = req.body;
-
-  if (!nickname || !email || !password) {
-    return res.status(400).send("Nickname, email e password sono obbligatori.");
-  }
-
   try {
-    const user = new User({
+    const { nickname, email, password, description, photo, isVIP } = req.body;
+
+    const existing = await User.findOne({ email });
+    if (existing) return res.status(400).send("Email già in uso.");
+
+    const newUser = new User({
       nickname,
       email,
       password,
-      description: description || '',
+      description,
       photo: photo || '/images/default-profile.png',
       isVIP: isVIP || false
     });
 
-    await user.save();
-    res.status(201).json({ message: "Utente creato con successo", user });
+    await newUser.save();
+    res.status(201).send("Utente creato.");
   } catch (err) {
-    console.error("Errore creazione utente:", err);
-    res.status(500).send("Errore interno durante la creazione dell'utente.");
+    console.error(err);
+    res.status(500).send("Errore server.");
   }
 });
 
