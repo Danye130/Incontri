@@ -2,34 +2,78 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard Creator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Area Creator - Incontri</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f0f2f5; }
+    main { padding: 20px; max-width: 600px; margin: auto; background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 15px; }
+    input[type="file"], textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #111;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #333;
+    }
+  </style>
 </head>
 <body>
-  <h1>Pubblica un Post</h1>
-  <form id="postForm" enctype="multipart/form-data">
-    <label>Testo:</label><br>
-    <textarea name="text" rows="4" cols="50"></textarea><br><br>
-    <label>Immagine:</label><br>
-    <input type="file" name="media" accept="image/*"><br><br>
-    <button type="submit">Pubblica</button>
-  </form>
+  <div id="navbar"></div>
+  <script>
+    fetch('/navbar.html')
+      .then(res => res.text())
+      .then(html => document.getElementById('navbar').innerHTML = html);
+  </script>
+
+  <main>
+    <h2>Crea un Nuovo Post</h2>
+    <form id="postForm" enctype="multipart/form-data">
+      <label for="text">Testo del post:</label>
+      <textarea name="text" id="text" rows="4" required></textarea>
+
+      <label for="media">Immagine (opzionale):</label>
+      <input type="file" name="media" id="media" accept="image/*">
+
+      <button type="submit">Pubblica</button>
+    </form>
+  </main>
 
   <script>
-    const form = document.getElementById('postForm');
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const formData = new FormData(form);
-      const res = await fetch('/posts/create', {
-        method: 'POST',
-        headers: {
-          'x-user-id': 'INSERISCI_ID_CREATOR'
-        },
-        body: formData
-      });
-      const result = await res.json();
-      alert('Post pubblicato!');
-      console.log(result);
+      const formData = new FormData(document.getElementById('postForm'));
+
+      try {
+        const res = await fetch('/posts/create', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (res.ok) {
+          alert('✅ Post pubblicato!');
+          document.getElementById('postForm').reset();
+        } else {
+          const error = await res.json();
+          alert('❌ Errore: ' + (error.message || 'Impossibile creare il post'));
+        }
+      } catch (err) {
+        alert('❌ Errore nella pubblicazione');
+        console.error(err);
+      }
     });
   </script>
+  <script src="/auth_utils.html"></script>
 </body>
 </html>

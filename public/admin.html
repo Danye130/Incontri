@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Incontri</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f0f2f5; }
+    main { padding: 20px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+    th { background-color: #f5f5f5; }
+    select, button, input[type="checkbox"] {
+      padding: 6px 8px;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar"></div>
+  <script>
+    fetch('/navbar.html')
+      .then(res => res.text())
+      .then(html => document.getElementById('navbar').innerHTML = html);
+  </script>
+
+  <main>
+    <h2>Gestione Utenti</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nickname</th>
+          <th>Email</th>
+          <th>Ruolo</th>
+          <th>In Evidenza</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="userTable"></tbody>
+    </table>
+  </main>
+
+  <script>
+    async function caricaUtenti() {
+      const res = await fetch('/admin/users');
+      const utenti = await res.json();
+      const tbody = document.getElementById('userTable');
+      tbody.innerHTML = '';
+
+      utenti.forEach(utente => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${utente.nickname}</td>
+          <td>${utente.email}</td>
+          <td>
+            <select onchange="cambiaRuolo('${utente._id}', this.value)">
+              <option value="user" ${utente.role === 'user' ? 'selected' : ''}>User</option>
+              <option value="creator" ${utente.role === 'creator' ? 'selected' : ''}>Creator</option>
+              <option value="admin" ${utente.role === 'admin' ? 'selected' : ''}>Admin</option>
+            </select>
+          </td>
+          <td>
+            <input type="checkbox" onchange="toggleFeatured('${utente._id}', this.checked)" ${utente.isFeatured ? 'checked' : ''}>
+          </td>
+          <td>
+            <button onclick="eliminaUtente('${utente._id}')">Elimina</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function cambiaRuolo(userId, nuovoRuolo) {
+      await fetch(`/admin/users/${userId}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: nuovoRuolo })
+      });
+      caricaUtenti();
+    }
+
+    async function toggleFeatured(userId, isFeatured) {
+      await fetch(`/admin/users/${userId}/featured`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFeatured })
+      });
+    }
+
+    async function eliminaUtente(userId) {
+      if (confirm('Sei sicuro di voler eliminare questo utente?')) {
+        await fetch(`/admin/users/${userId}`, {
+          method: 'DELETE' });
+        caricaUtenti();
+      }
+    }
+
+    caricaUtenti();
+  </script>
+  <script src="/auth_utils.html"></script>
+</body>
+</html>

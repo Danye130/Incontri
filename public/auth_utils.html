@@ -1,0 +1,10 @@
+<script>
+  // Applica automaticamente l'ID utente salvato nel login a tutte le fetch
+  const originalFetch = window.fetch;
+  window.fetch = async (input, init = {}) => {
+    const userId = localStorage.getItem('userId');
+    if (!init.headers) init.headers = {};
+    if (userId) init.headers['x-user-id'] = userId;
+    return originalFetch(input, init);
+  };
+</script>

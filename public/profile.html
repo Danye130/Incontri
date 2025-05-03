@@ -3,47 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profilo Utente - Incontri</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Il mio Profilo - Incontri</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+    main { max-width: 500px; margin: 30px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 15px; }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #111;
+      color: white;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #333;
+    }
+    #navbar { width: 100%; }
+  </style>
 </head>
 <body>
-  <div class="container center-content">
-    <h1>👤 Il tuo profilo</h1>
-    <div id="profile-info">
-      <img id="photo" class="profile-photo-large" src="/images/default-profile.png" alt="Foto Profilo">
-      <h2 id="nickname">Nickname</h2>
-      <p><strong>Descrizione:</strong> <span id="description">...</span></p>
-      <p id="vip-badge" class="vip-badge" style="display: none;">✨ Utente VIP</p>
-      <br>
-      <a href="modifica-profilo.html" class="btn"✏️ Modifica Profilo</a>
-    </div>
-    <br>
-    <a href="index.html" class="btn">🏠 Torna alla Home</a>
-  </div>
+  <div id="navbar"></div>
+  <script>
+    fetch('/navbar.html')
+      .then(res => res.text())
+      .then(html => document.getElementById('navbar').innerHTML = html);
+  </script>
+
+  <main>
+    <h2>Modifica Profilo</h2>
+    <form id="profileForm">
+      <label for="nickname">Nickname</label>
+      <input type="text" id="nickname" name="nickname" required>
+
+      <label for="description">Descrizione</label>
+      <textarea id="description" name="description" rows="3"></textarea>
+
+      <label for="photo">Foto profilo (solo immagine)</label>
+      <input type="file" id="photo" name="photo" accept="image/*">
+
+      <button type="submit">Salva modifiche</button>
+    </form>
+  </main>
 
   <script>
-    const email = localStorage.getItem("userEmail");
+    const form = document.getElementById('profileForm');
 
-    if (!email) {
-      alert("Accesso negato. Effettua il login.");
-      window.location.href = "login.html";
+    async function caricaProfilo() {
+      try {
+        const res = await fetch('/api/profile');
+        const user = await res.json();
+        document.getElementById('nickname').value = user.nickname || '';
+        document.getElementById('description').value = user.description || '';
+      } catch (err) {
+        alert('Errore nel caricamento del profilo');
+      }
     }
 
-    fetch(`https://incontri-backend.onrender.com/profile-data?email=${email}`)
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("nickname").textContent = data.nickname || "Nickname";
-        document.getElementById("description").textContent = data.description || "Nessuna descrizione.";
-        document.getElementById("photo").src = data.photo || "/images/default-profile.png";
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
 
-        if (data.isVIP) {
-          document.getElementById("vip-badge").style.display = "inline-block";
+      try {
+        const res = await fetch('/api/profile', {
+          method: 'PUT',
+          body: formData
+        });
+
+        if (res.ok) {
+          alert('Profilo aggiornato!');
+        } else {
+          alert('Errore nel salvataggio');
         }
-      })
-      .catch(err => {
-        console.error("Errore caricamento profilo:", err);
-        document.getElementById("profile-info").innerHTML = "<p>Errore durante il caricamento.</p>";
-      });
+      } catch (err) {
+        alert('Errore invio dati');
+        console.error(err);
+      }
+    });
+
+    caricaProfilo();
   </script>
+  <script src="/auth_utils.html"></script>
 </body>
 </html>

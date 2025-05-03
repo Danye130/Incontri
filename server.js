@@ -4,47 +4,42 @@ const multer = require('multer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const sharp = require('sharp');
-const stripe = require('stripe')('sk_test_1234567890abcdef'); // tua chiave Stripe
+const stripe = require('stripe')('sk_test_1234567890abcdef');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Middleware base
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// MongoDB
+// Connessione MongoDB
 mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true
-}).then(() => console.log('✅ MongoDB Connesso'))
+}).then(() => console.log('✅ MongoDB connesso'))
   .catch(err => console.error('❌ Errore MongoDB:', err));
 
 // MODELLI
 const User = require('./models/User');
 
-const MessageSchema = new mongoose.Schema({
-  sender: String,
-  receiver: String,
-  text: String,
-  timestamp: { type: Date, default: Date.now },
-  read: { type: Boolean, default: false }
-});
-const Message = mongoose.model('Message', MessageSchema);
+// ROUTES
+const authRoutes = require('./routes/auth');
+const registerRoutes = require('./routes/register');
+const profileRoutes = require('./routes/profile');
+const adminRoutes = require('./routes/admin');
 
-const PostSchema = new mongoose.Schema({
-  creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  text: { type: String, default: '' },
-  mediaUrl: { type: String },
-  createdAt: { type: Date, default: Date.now }
-});
-const Post = mongoose.model('Post', PostSchema);
+// Attivazione rotte API
+app.use('/api', authRoutes);
+app.use('/api', registerRoutes);
+app.use('/api', profileRoutes);
+app.use('/admin', adminRoutes);
 
-// Middleware mock per autenticazione
+// Middleware autenticazione
 app.use(async (req, res, next) => {
   const userId = req.headers['x-user-id'];
   if (userId) {
@@ -64,29 +59,37 @@ function requireRole(role) {
   };
 }
 
-// Rotte test base
-app.get('/admin', requireRole('admin'), (req, res) => {
-  res.send('Benvenuto admin');
+// MODELLI MESSAGGI e POST
+const MessageSchema = new mongoose.Schema({
+  sender: String,
+  receiver: String,
+  text: String,
+  timestamp: { type: Date, default: Date.now },
+  read: { type: Boolean, default: false }
 });
-app.get('/creator', requireRole('creator'), (req, res) => {
-  res.send('Benvenuto creator');
-});
+const Message = mongoose.model('Message', MessageSchema);
 
-// Upload per post
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'public/uploads/';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
+const PostSchema = new mongoose.Schema({
+  creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  text: { type: String, default: '' },
+  mediaUrl: { type: String },
+  createdAt: { type: Date, default: Date.now }
 });
-const upload = multer({ storage });
+const Post = mongoose.model('Post', PostSchema);
 
-// Crea post
-app.post('/posts/create', requireRole('creator'), upload.single('media'), async (req, res) => {
+// ROTTE POST
+app.post('/posts/create', requireRole('creator'), multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const dir = 'public/uploads/';
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+      cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+      cb(null, Date.now() + path.extname(file.originalname));
+    }
+  })
+}).single('media'), async (req, res) => {
   const post = new Post({
     creator: req.user._id,
     text: req.body.text,
@@ -96,84 +99,22 @@ app.post('/posts/create', requireRole('creator'), upload.single('media'), async 
   res.json(post);
 });
 
-// Feed pubblico
 app.get('/posts/feed', async (req, res) => {
   const posts = await Post.find().populate('creator', 'nickname photo').sort({ createdAt: -1 });
   res.json(posts);
 });
 
-// Abbonamento Stripe
-app.post('/subscriptions/subscribe/:creatorId', async (req, res) => {
-  const creator = await User.findById(req.params.creatorId);
-  const follower = req.user;
-
-  if (!creator || creator.role !== 'creator') {
-    return res.status(404).json({ message: 'Creator non trovato' });
-  }
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    mode: 'subscription',
-    line_items: [{
-      price_data: {
-        currency: 'eur',
-        product_data: {
-          name: `Abbonamento a ${creator.nickname}`
-        },
-        unit_amount: creator.subscriptionPrice * 100,
-        recurring: { interval: 'month' }
-      },
-      quantity: 1
-    }],
-    success_url: 'http://localhost:3000/success.html',
-    cancel_url: 'http://localhost:3000/cancel.html',
-    metadata: {
-      followerId: follower._id.toString(),
-      creatorId: creator._id.toString()
-    }
-  });
-
-  res.json({ url: session.url });
-});
-
-// Webhook Stripe (da attivare in futuro)
-app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const endpointSecret = 'whsec_1234567890abcdef'; // tua chiave webhook
-  const sig = req.headers['stripe-signature'];
-
-  let event;
+// ROTTA PROFILI IN EVIDENZA
+app.get('/api/featured-users', async (req, res) => {
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    const featuredUsers = await User.find({ isFeatured: true }).limit(10);
+    res.json(featuredUsers);
   } catch (err) {
-    console.log('Errore firma webhook');
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    res.status(500).json({ error: 'Errore nel recupero dei profili in evidenza' });
   }
-
-  if (event.type === 'checkout.session.completed') {
-    const metadata = event.data.object.metadata;
-    const followerId = metadata.followerId;
-    const creatorId = metadata.creatorId;
-
-    try {
-      const creator = await User.findById(creatorId);
-      if (!creator.subscribers.includes(followerId)) {
-        creator.subscribers.push(followerId);
-        await creator.save();
-        console.log(`✅ Abbonamento salvato: ${followerId} → ${creator.nickname}`);
-      }
-    } catch (err) {
-      console.error('❌ Errore salvataggio abbonamento', err);
-    }
-  }
-
-  res.status(200).send('Webhook ricevuto');
 });
 
-// Rotte ADMIN
-const adminRoutes = require('./routes/admin');
-app.use('/admin', adminRoutes);
-
-// Avvio
+// AVVIO SERVER
 app.listen(PORT, () => {
   console.log(`🚀 Server attivo su http://localhost:${PORT}`);
 });

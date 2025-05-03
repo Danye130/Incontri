@@ -14,7 +14,8 @@ const UserSchema = new mongoose.Schema({
     default: 'user'
   },
   subscriptionPrice: { type: Number },
-  subscribers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+  subscribers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  isFeatured: { type: Boolean, default: false } // 👑 profilo in evidenza
 });
 
 module.exports = mongoose.model('User', UserSchema);
