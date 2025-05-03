@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Creator</title>
+</head>
+<body>
+  <h1>Pubblica un Post</h1>
+  <form id="postForm" enctype="multipart/form-data">
+    <label>Testo:</label><br>
+    <textarea name="text" rows="4" cols="50"></textarea><br><br>
+    <label>Immagine:</label><br>
+    <input type="file" name="media" accept="image/*"><br><br>
+    <button type="submit">Pubblica</button>
+  </form>
+
+  <script>
+    const form = document.getElementById('postForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const res = await fetch('/posts/create', {
+        method: 'POST',
+        headers: {
+          'x-user-id': 'INSERISCI_ID_CREATOR'
+        },
+        body: formData
+      });
+      const result = await res.json();
+      alert('Post pubblicato!');
+      console.log(result);
+    });
+  </script>
+</body>
+</html>

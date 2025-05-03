@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Feed Post</title>
+</head>
+<body>
+  <h1>Feed dei Creator</h1>
+  <div id="feed"></div>
+
+  <script>
+    async function loadFeed() {
+      const res = await fetch('/posts/feed');
+      const posts = await res.json();
+      const feed = document.getElementById('feed');
+      posts.forEach(post => {
+        const div = document.createElement('div');
+        div.style.border = "1px solid gray";
+        div.style.margin = "10px";
+        div.style.padding = "10px";
+
+        div.innerHTML = `
+          <h3>${post.creator.nickname}</h3>
+          <p>${post.text}</p>
+          ${post.mediaUrl ? `<img src="${post.mediaUrl}" style="max-width:300px;">` : ''}
+          <small>${new Date(post.createdAt).toLocaleString()}</small>
+        `;
+        feed.appendChild(div);
+      });
+    }
+
+    loadFeed();
+  </script>
+</body>
+</html>

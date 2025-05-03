@@ -4,7 +4,7 @@ const multer = require('multer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const sharp = require('sharp');
-const stripe = require('stripe')('sk_test_1234567890abcdef');
+const stripe = require('stripe')('sk_test_1234567890abcdef'); // tua chiave Stripe
 const path = require('path');
 const fs = require('fs');
 
@@ -21,11 +21,10 @@ app.use(express.static('public'));
 mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB Connesso ✅'))
-.catch(err => console.error('Errore MongoDB ❌', err));
+}).then(() => console.log('✅ MongoDB Connesso'))
+  .catch(err => console.error('❌ Errore MongoDB:', err));
 
-// Schemi
+// MODELLI
 const UserSchema = new mongoose.Schema({
   nickname: String,
   email: String,
@@ -33,7 +32,14 @@ const UserSchema = new mongoose.Schema({
   description: String,
   photo: String,
   isVIP: { type: Boolean, default: false },
-  likes: [String]
+  likes: [String],
+  role: {
+    type: String,
+    enum: ['user', 'creator', 'admin'],
+    default: 'user'
+  },
+  subscriptionPrice: { type: Number },
+  subscribers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 const User = mongoose.model('User', UserSchema);
 
@@ -46,212 +52,144 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', MessageSchema);
 
-// Multer Upload
+const PostSchema = new mongoose.Schema({
+  creator: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  text: { type: String, default: '' },
+  mediaUrl: { type: String },
+  createdAt: { type: Date, default: Date.now }
+});
+const Post = mongoose.model('Post', PostSchema);
+
+// Middleware mock per autenticazione
+app.use(async (req, res, next) => {
+  const userId = req.headers['x-user-id'];
+  if (userId) {
+    const user = await User.findById(userId);
+    req.user = user;
+  }
+  next();
+});
+
+// Middleware ruoli
+function requireRole(role) {
+  return function (req, res, next) {
+    if (req.user && req.user.role === role) {
+      return next();
+    }
+    res.status(403).json({ message: 'Accesso negato' });
+  };
+}
+
+// Rotte test base
+app.get('/admin', requireRole('admin'), (req, res) => {
+  res.send('Benvenuto admin');
+});
+app.get('/creator', requireRole('creator'), (req, res) => {
+  res.send('Benvenuto creator');
+});
+
+// Upload per post
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadPath = 'public/uploads/';
-    fs.mkdirSync(uploadPath, { recursive: true });
-    cb(null, uploadPath);
+    const dir = 'public/uploads/';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname.replace(/\s/g, ''));
+    cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 const upload = multer({ storage });
 
-// Registrazione
-app.post('/signup', upload.single('photo'), async (req, res) => {
-  const { nickname, email, password, description } = req.body;
-  let photoPath = '/images/default-profile.png';
+// Crea post
+app.post('/posts/create', requireRole('creator'), upload.single('media'), async (req, res) => {
+  const post = new Post({
+    creator: req.user._id,
+    text: req.body.text,
+    mediaUrl: req.file ? '/uploads/' + req.file.filename : null
+  });
+  await post.save();
+  res.json(post);
+});
 
-  if (req.file) {
-    const outputPath = 'public/uploads/resized-' + req.file.filename;
-    await sharp(req.file.path).resize(300, 300).toFile(outputPath);
-    fs.unlinkSync(req.file.path);
-    photoPath = '/uploads/resized-' + req.file.filename;
+// Feed pubblico
+app.get('/posts/feed', async (req, res) => {
+  const posts = await Post.find().populate('creator', 'nickname photo').sort({ createdAt: -1 });
+  res.json(posts);
+});
+
+// Abbonamento Stripe
+app.post('/subscriptions/subscribe/:creatorId', async (req, res) => {
+  const creator = await User.findById(req.params.creatorId);
+  const follower = req.user;
+
+  if (!creator || creator.role !== 'creator') {
+    return res.status(404).json({ message: 'Creator non trovato' });
   }
-
-  const newUser = new User({ nickname, email, password, description, photo: photoPath });
-  await newUser.save();
-  res.redirect('/login.html');
-});
-
-// Login
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email, password });
-  if (user) {
-    res.redirect('/index.html');
-  } else {
-    res.send('Email o password errata.');
-  }
-});
-
-// Dati profilo
-app.get('/profile-data', async (req, res) => {
-  const { email } = req.query;
-  const user = await User.findOne({ email });
-
-  if (user) {
-    res.json({
-      nickname: user.nickname,
-      description: user.description,
-      photo: user.photo,
-      isVIP: user.isVIP
-    });
-  } else {
-    res.status(404).send('Utente non trovato');
-  }
-});
-
-// Lista utenti
-app.get('/list-users', async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
-
-// Invia messaggio
-app.post('/send-message', async (req, res) => {
-  const { sender, receiver, text } = req.body;
-  const newMessage = new Message({ sender, receiver, text, read: false });
-  await newMessage.save();
-  res.sendStatus(200);
-});
-
-// Ottieni messaggi
-app.get('/get-messages', async (req, res) => {
-  const { sender, receiver } = req.query;
-  const filter = sender && receiver
-    ? { $or: [ { sender, receiver }, { sender: receiver, receiver: sender } ] }
-    : receiver
-    ? { receiver }
-    : {};
-
-  const messages = await Message.find(filter).sort('timestamp');
-  res.json(messages);
-});
-
-// Messaggi non letti
-app.get('/unread-messages', async (req, res) => {
-  const { receiver } = req.query;
-  if (!receiver) return res.json({ count: 0 });
-
-  const count = await Message.countDocuments({ receiver, read: false });
-  res.json({ count });
-});
-
-// Marca come letti
-app.post('/mark-messages-read', async (req, res) => {
-  const { sender, receiver } = req.body;
-  await Message.updateMany({ sender, receiver, read: false }, { read: true });
-  res.sendStatus(200);
-});
-
-// Elenco utenti che ti hanno scritto (per messaggi.html)
-app.get('/message-senders', async (req, res) => {
-  const { receiver } = req.query;
-  if (!receiver) return res.status(400).send("Receiver mancante");
-
-  const messages = await Message.find({ receiver });
-  const uniqueSenders = [...new Set(messages.map(m => m.sender))];
-  const users = await User.find({ email: { $in: uniqueSenders } });
-
-  res.json(users);
-});
-
-// Like
-app.post('/like', async (req, res) => {
-  const { senderNickname, receiverEmail } = req.body;
-
-  const user = await User.findOne({ email: receiverEmail });
-  if (user) {
-    if (!user.likes.includes(senderNickname)) {
-      user.likes.push(senderNickname);
-      await user.save();
-    }
-    res.send('Like inviato!');
-  } else {
-    res.status(404).send('Utente non trovato');
-  }
-});
-
-// Aggiorna profilo
-app.post('/update-profile', upload.single('photo'), async (req, res) => {
-  const { email, nickname, description, password } = req.body;
-  const user = await User.findOne({ email });
-
-  if (user) {
-    user.nickname = nickname;
-    user.description = description;
-    user.password = password;
-
-    if (req.file) {
-      const outputPath = 'public/uploads/resized-' + req.file.filename;
-      await sharp(req.file.path).resize(300, 300).toFile(outputPath);
-      fs.unlinkSync(req.file.path);
-      user.photo = '/uploads/resized-' + req.file.filename;
-    }
-
-    await user.save();
-    res.redirect('/profile.html');
-  } else {
-    res.status(404).send('Utente non trovato');
-  }
-});
-
-// Stripe pagamento VIP
-app.post('/create-checkout-session', async (req, res) => {
-  const { priceId } = req.body;
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
+    mode: 'subscription',
     line_items: [{
       price_data: {
         currency: 'eur',
-        product_data: { name: 'Piano VIP Incontri' },
-        unit_amount: priceId === 'price_1_month' ? 999 : 4999
+        product_data: {
+          name: `Abbonamento a ${creator.nickname}`
+        },
+        unit_amount: creator.subscriptionPrice * 100,
+        recurring: { interval: 'month' }
       },
       quantity: 1
     }],
-    mode: 'payment',
-    success_url: 'https://incontri-backend.onrender.com/index.html?success=true',
-    cancel_url: 'https://incontri-backend.onrender.com/index.html?canceled=true'
+    success_url: 'http://localhost:3000/success.html',
+    cancel_url: 'http://localhost:3000/cancel.html',
+    metadata: {
+      followerId: follower._id.toString(),
+      creatorId: creator._id.toString()
+    }
   });
 
-  res.json({ id: session.id });
+  res.json({ url: session.url });
 });
 
-// ✅ NUOVO — Crea profilo via API
-app.post('/create-user', async (req, res) => {
+// Webhook Stripe (da attivare in futuro)
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const endpointSecret = 'whsec_1234567890abcdef'; // tua chiave webhook
+  const sig = req.headers['stripe-signature'];
+
+  let event;
   try {
-    const { nickname, email, password, description, photo, isVIP } = req.body;
-
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).send("Email già in uso.");
-
-    const newUser = new User({
-      nickname,
-      email,
-      password,
-      description,
-      photo: photo || '/images/default-profile.png',
-      isVIP: isVIP || false
-    });
-
-    await newUser.save();
-    res.status(201).send("Utente creato.");
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Errore server.");
+    console.log('Errore firma webhook');
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
+
+  if (event.type === 'checkout.session.completed') {
+    const metadata = event.data.object.metadata;
+    const followerId = metadata.followerId;
+    const creatorId = metadata.creatorId;
+
+    try {
+      const creator = await User.findById(creatorId);
+      if (!creator.subscribers.includes(followerId)) {
+        creator.subscribers.push(followerId);
+        await creator.save();
+        console.log(`✅ Abbonamento salvato: ${followerId} → ${creator.nickname}`);
+      }
+    } catch (err) {
+      console.error('❌ Errore salvataggio abbonamento', err);
+    }
+  }
+
+  res.status(200).send('Webhook ricevuto');
 });
 
-// Home
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+// Rotte ADMIN
+const adminRoutes = require('./routes/admin');
+app.use('/admin', adminRoutes);
 
 // Avvio
 app.listen(PORT, () => {
-  console.log(`✅ Server avviato su http://localhost:${PORT}`);
+  console.log(`🚀 Server attivo su http://localhost:${PORT}`);
 });
