@@ -25,23 +25,7 @@ mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.
   .catch(err => console.error('❌ Errore MongoDB:', err));
 
 // MODELLI
-const UserSchema = new mongoose.Schema({
-  nickname: String,
-  email: String,
-  password: String,
-  description: String,
-  photo: String,
-  isVIP: { type: Boolean, default: false },
-  likes: [String],
-  role: {
-    type: String,
-    enum: ['user', 'creator', 'admin'],
-    default: 'user'
-  },
-  subscriptionPrice: { type: Number },
-  subscribers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
-});
-const User = mongoose.model('User', UserSchema);
+const User = require('./models/User');
 
 const MessageSchema = new mongoose.Schema({
   sender: String,
