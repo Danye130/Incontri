@@ -2,40 +2,43 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// Autenticazione finta via header
-router.use(async (req, res, next) => {
-  const userId = req.headers['x-user-id'];
-  if (!userId) return res.status(401).json({ message: 'Non autenticato' });
-
-  const user = await User.findById(userId);
+// Middleware di controllo ruolo admin
+function requireAdmin(req, res, next) {
+  const user = req.user;
   if (!user || user.role !== 'admin') {
-    return res.status(403).json({ message: 'Accesso negato: solo admin' });
+    return res.status(403).json({ message: 'Accesso riservato agli admin' });
   }
-
-  req.user = user;
   next();
+}
+
+// Ottieni tutti gli utenti
+router.get('/users', requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Errore nel recupero utenti' });
+  }
 });
 
-// ✅ 1. Ottieni tutti gli utenti
-router.get('/users', async (req, res) => {
-  const users = await User.find();
-  res.json(users);
+// Modifica ruolo o stato utente
+router.post('/user/:id/update', requireAdmin, async (req, res) => {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json({ message: 'Utente aggiornato', user: updatedUser });
+  } catch (err) {
+    res.status(500).json({ message: 'Errore aggiornamento utente' });
+  }
 });
 
-// ✅ 2. Cambia ruolo a un utente
-router.put('/users/:id/role', async (req, res) => {
-  const user = await User.findById(req.params.id);
-  if (!user) return res.status(404).json({ message: 'Utente non trovato' });
-
-  user.role = req.body.role;
-  await user.save();
-  res.json({ message: 'Ruolo aggiornato' });
-});
-
-// ✅ 3. Elimina utente
-router.delete('/users/:id', async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Utente eliminato' });
+// Elimina utente (es. profilo fake)
+router.delete('/user/:id', requireAdmin, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Utente eliminato' });
+  } catch (err) {
+    res.status(500).json({ message: 'Errore eliminazione utente' });
+  }
 });
 
 module.exports = router;

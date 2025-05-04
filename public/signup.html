@@ -3,59 +3,114 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registrati - Incontri</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Registrazione - Incontri</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .signup-box {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      max-width: 450px;
+      width: 100%;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #111;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #333;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Crea un account</h1>
+
+  <div class="signup-box">
+    <h2>Crea un nuovo account</h2>
     <form id="signupForm" enctype="multipart/form-data">
-      <input type="text" name="nickname" placeholder="Nickname" required><br>
-      <input type="email" name="email" placeholder="Email" required><br>
-      <input type="password" name="password" placeholder="Password" required><br>
-      <textarea name="description" placeholder="Descrizione" rows="3"></textarea><br>
-      <label>Foto profilo:</label><br>
-      <input type="file" name="photo" accept="image/*"><br><br>
-      <button type="submit" class="btn">Registrati</button>
+      <input type="text" id="nickname" placeholder="Nickname" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <textarea id="description" placeholder="Descrizione profilo (facoltativa)"></textarea>
+      <label for="photo">Foto profilo:</label>
+      <input type="file" id="photo" accept="image/*" />
+      <button type="submit">Registrati</button>
     </form>
-    <p id="msg" style="color:green;"></p>
-    <p><a href="login.html">Hai già un account? Accedi!</a></p>
   </div>
 
   <script>
-    const form = document.getElementById('signupForm');
-    const msg = document.getElementById('msg');
-
-    form.addEventListener('submit', function (e) {
+    document.getElementById("signupForm").addEventListener("submit", async function (e) {
       e.preventDefault();
 
-      const formData = new FormData(form);
+      const formData = new FormData();
+      formData.append("nickname", document.getElementById("nickname").value);
+      formData.append("email", document.getElementById("email").value);
+      formData.append("password", document.getElementById("password").value);
+      formData.append("description", document.getElementById("description").value);
 
-      fetch('https://incontri-backend.onrender.com/signup', {
-        method: 'POST',
-        body: formData
-      })
-      .then(res => {
+      const photoInput = document.getElementById("photo");
+      if (photoInput.files.length > 0) {
+        formData.append("photo", photoInput.files[0]);
+      }
+
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+
         if (res.ok) {
-          const email = formData.get('email');
-          localStorage.setItem('userEmail', email);
-          msg.textContent = "✅ Registrazione completata! Verrai reindirizzato...";
-          setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 2000);
+          alert("Registrazione completata!");
+          window.location.href = "/login.html";
         } else {
-          msg.style.color = 'red';
-          msg.textContent = "❌ Errore durante la registrazione.";
+          alert(data.message || "Errore durante la registrazione.");
         }
-      })
-      .catch(err => {
-        console.error('Errore signup:', err);
-        msg.style.color = 'red';
-        msg.textContent = "❌ Errore durante la registrazione.";
-      });
+      } catch (err) {
+        console.error("Errore:", err);
+        alert("Errore imprevisto durante la registrazione.");
+      }
     });
   </script>
-<script src="/auth_utils.html"></script>
 
 </body>
 </html>

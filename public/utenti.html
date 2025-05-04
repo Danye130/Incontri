@@ -3,67 +3,101 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Scopri Utenti - Incontri</title>
+  <title>Incontri - Utenti</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="container center-content">
-    <h1>Scopri Utenti</h1>
-    <div class="card-grid" id="users-list">Caricamento utenti...</div>
-    <a href="index.html" class="btn">🏠 Torna alla Home</a>
+
+  <div class="container">
+    <h1>🔍 Scopri Utenti</h1>
+    <div class="card-grid" id="usersContainer"></div>
   </div>
 
   <script>
-    const email = localStorage.getItem("userEmail");
+    const userId = localStorage.getItem("userId");
+    const userRole = localStorage.getItem("userRole"); // salvato al login
 
-    if (!email) {
-      alert("Devi essere loggato per vedere gli utenti.");
-      window.location.href = "login.html";
-    }
-
-    fetch("https://incontri-backend.onrender.com/list-users")
-      .then(res => res.json())
-      .then(users => {
-        const container = document.getElementById("users-list");
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/users');
+        const users = await res.json();
+        const container = document.getElementById("usersContainer");
         container.innerHTML = "";
 
-        users
-          .filter(user => user.email !== email)
-          .forEach(user => {
-            const card = document.createElement("div");
-            card.className = "card";
+        users.forEach(user => {
+          const card = document.createElement("div");
+          card.className = "card";
 
-            card.innerHTML = `
-              <img src="${user.photo || '/images/default-profile.png'}" class="profile-photo" />
-              <h3>${user.nickname} ${user.isVIP ? '<span class="vip-badge">VIP</span>' : ''}</h3>
-              <p>${user.description || "Nessuna descrizione"}</p>
-              <button class="btn" onclick="chatWith('${user.email}')">💬 Messaggio</button>
-              <button class="btn like-btn" onclick="likeUser('${user.email}')">❤️ Mi Piace</button>
-            `;
+          card.innerHTML = `
+            <img class="profile-photo" src="${user.photo}" alt="${user.nickname}" />
+            <h3>${user.nickname} ${user.isVIP ? '<span class="vip-badge">VIP</span>' : ''}</h3>
+            ${user.featured ? '<div style="color: gold;">🌟 In Evidenza</div>' : ''}
+            ${user.isFake ? '<div style="color: orange;">🤖 Profilo Fake</div>' : ''}
+            <p>${user.description || ''}</p>
+            ${userRole === 'admin' ? adminControls(user) : ''}
+          `;
 
-            container.appendChild(card);
-          });
-      });
-
-    function chatWith(receiverEmail) {
-      window.location.href = `chat.html?receiverEmail=${receiverEmail}`;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Errore nel caricamento utenti:", err);
+      }
     }
 
-    function likeUser(receiverEmail) {
-      const senderNickname = localStorage.getItem("userNickname");
-      if (!senderNickname) return alert("Nickname non trovato nel profilo.");
-
-      fetch("https://incontri-backend.onrender.com/like", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senderNickname, receiverEmail })
-      })
-      .then(res => res.text())
-      .then(msg => alert(msg))
-      .catch(err => console.error("Errore invio like:", err));
+    function adminControls(user) {
+      return `
+        <button class="btn" onclick="toggleVIP('${user._id}')">${user.isVIP ? 'Rimuovi VIP' : 'Rendi VIP'}</button>
+        <button class="btn" onclick="toggleFeatured('${user._id}')">${user.featured ? 'Nascondi' : 'Evidenzia'}</button>
+        <button class="btn like-btn" onclick="toggleFake('${user._id}')">${user.isFake ? 'Rendi Reale' : 'Rendi Fake'}</button>
+        <button class="btn" onclick="deleteUser('${user._id}')">❌ Elimina</button>
+      `;
     }
+
+    async function updateUser(userId, updates) {
+      try {
+        await fetch(`/admin/user/${userId}/update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': localStorage.getItem('userId')
+          },
+          body: JSON.stringify(updates)
+        });
+        loadUsers();
+      } catch (err) {
+        console.error('Errore aggiornamento:', err);
+      }
+    }
+
+    function toggleVIP(id) {
+      updateUser(id, { isVIP: true });
+    }
+
+    function toggleFeatured(id) {
+      updateUser(id, { featured: true });
+    }
+
+    function toggleFake(id) {
+      updateUser(id, { isFake: true });
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Sei sicuro di voler eliminare questo utente?')) return;
+      try {
+        await fetch(`/admin/user/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'x-user-id': localStorage.getItem('userId')
+          }
+        });
+        loadUsers();
+      } catch (err) {
+        console.error('Errore eliminazione:', err);
+      }
+    }
+
+    loadUsers();
   </script>
-<script src="/auth_utils.html"></script>
 
 </body>
 </html>

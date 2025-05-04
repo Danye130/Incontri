@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
@@ -18,7 +19,7 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // Connessione MongoDB
-mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => console.log('✅ MongoDB connesso'))
@@ -77,8 +78,8 @@ const PostSchema = new mongoose.Schema({
 });
 const Post = mongoose.model('Post', PostSchema);
 
-// ROTTE POST
-app.post('/posts/create', requireRole('creator'), multer({
+// ROTTA CREAZIONE POST
+app.post('/posts/create', requireRole('user'), multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const dir = 'public/uploads/';
@@ -99,6 +100,7 @@ app.post('/posts/create', requireRole('creator'), multer({
   res.json(post);
 });
 
+// ROTTA FEED POST
 app.get('/posts/feed', async (req, res) => {
   const posts = await Post.find().populate('creator', 'nickname photo').sort({ createdAt: -1 });
   res.json(posts);
@@ -107,10 +109,20 @@ app.get('/posts/feed', async (req, res) => {
 // ROTTA PROFILI IN EVIDENZA
 app.get('/api/featured-users', async (req, res) => {
   try {
-    const featuredUsers = await User.find({ isFeatured: true }).limit(10);
+    const featuredUsers = await User.find({ featured: true }).limit(10);
     res.json(featuredUsers);
   } catch (err) {
     res.status(500).json({ error: 'Errore nel recupero dei profili in evidenza' });
+  }
+});
+
+// ROTTA TUTTI GLI UTENTI (ORDINATI)
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await User.find().sort({ featured: -1, isFake: 1 });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Errore nel recupero degli utenti' });
   }
 });
 

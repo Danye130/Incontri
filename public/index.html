@@ -1,74 +1,70 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Incontri - Home</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
-    .featured { padding: 20px; background-color: #fff; }
-    .featured h2 { margin-bottom: 15px; }
-    .user-grid { display: flex; flex-wrap: wrap; gap: 15px; }
-    .user-card {
-      width: 200px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      overflow: hidden;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .user-card img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-    }
-    .user-card div {
-      padding: 10px;
-    }
-    .user-card h3 { margin: 0 0 5px; font-size: 18px; }
-    .user-card p { font-size: 14px; color: #555; margin: 0; }
-  </style>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div id="navbar"></div>
-  <script>
-    fetch('/navbar.html')
-      .then(res => res.text())
-      .then(html => document.getElementById('navbar').innerHTML = html);
-  </script>
 
-  <section class="featured">
-    <h2>Profili in Evidenza</h2>
-    <div class="user-grid" id="featured-container"></div>
-  </section>
+  <div class="container">
+    <h1>Benvenuto su <span class="vip-badge">Incontri</span></h1>
+
+    <div class="home-buttons">
+      <a href="signup.html" class="btn" id="signupBtn">📝 Registrati</a>
+      <a href="login.html" class="btn" id="loginBtn">🔐 Accedi</a>
+      <a href="profile.html" class="btn hidden" id="profileBtn">👤 Profilo</a>
+      <a href="utenti.html" class="btn hidden" id="usersBtn">🔍 Scopri Utenti</a>
+      <button id="messagesBtn" class="btn hidden">📩 Messaggi</button>
+      <button id="likesBtn" class="btn hidden">❤️ Like Ricevuti</button>
+      <button class="btn hidden" id="logoutBtn">🚪 Logout</button>
+    </div>
+
+    <h2>⭐ Profili in Evidenza</h2>
+    <div class="card-grid" id="featuredUsers"></div>
+
+    <h2>👥 Tutti i Profili</h2>
+    <div class="card-grid" id="allUsers"></div>
+  </div>
 
   <script>
-    fetch('/api/featured-users')
-      .then(res => res.json())
-      .then(users => {
-        const container = document.getElementById('featured-container');
-        if (!users.length) {
-          container.innerHTML = '<p>Nessun profilo in evidenza al momento.</p>';
-          return;
-        }
+    const email = localStorage.getItem("userEmail");
+
+    if (email) {
+      document.getElementById("signupBtn").style.display = "none";
+      document.getElementById("loginBtn").style.display = "none";
+      document.getElementById("profileBtn").classList.remove("hidden");
+      document.getElementById("usersBtn").classList.remove("hidden");
+      document.getElementById("logoutBtn").classList.remove("hidden");
+      document.getElementById("messagesBtn").classList.remove("hidden");
+      document.getElementById("likesBtn").classList.remove("hidden");
+    }
+
+    async function loadUsers(endpoint, containerId) {
+      try {
+        const res = await fetch(endpoint);
+        const users = await res.json();
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+
         users.forEach(user => {
-          const card = document.createElement('div');
-          card.className = 'user-card';
-          card.innerHTML = `
-            <img src="${user.photo}" alt="${user.nickname}">
-            <div>
-              <h3>${user.nickname}</h3>
-              <p>${user.description || ''}</p>
-            </div>
+          const div = document.createElement('div');
+          div.className = 'card';
+          div.innerHTML = `
+            <img class="profile-photo" src="${user.photo || '/images/default-profile.jpg'}" alt="${user.nickname}">
+            <h3>${user.nickname}${user.isVIP ? '<span class="vip-badge">VIP</span>' : ''}</h3>
           `;
-          container.appendChild(card);
+          container.appendChild(div);
         });
-      })
-      .catch(err => {
-        document.getElementById('featured-container').innerHTML = '<p>Errore nel caricamento dei profili.</p>';
-        console.error('Errore:', err);
-      });
+      } catch (err) {
+        console.error("Errore caricamento utenti:", err);
+      }
+    }
+
+    loadUsers('/api/featured-users', 'featuredUsers');
+    loadUsers('/api/users', 'allUsers');
   </script>
-  <script src="/auth_utils.html"></script>
+
 </body>
 </html>

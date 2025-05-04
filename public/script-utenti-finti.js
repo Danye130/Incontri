@@ -1,12 +1,13 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const { faker } = require('@faker-js/faker');
 
-mongoose.connect('mongodb+srv://IncontriUser:Calipso1!@cluster0.myejdyz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-.then(() => console.log('MongoDB Connesso ✅'))
-.catch((err) => console.error('Errore MongoDB ❌', err));
+.then(() => console.log('✅ MongoDB connesso'))
+.catch((err) => console.error('❌ Errore MongoDB:', err));
 
 const UserSchema = new mongoose.Schema({
   nickname: String,
@@ -15,12 +16,15 @@ const UserSchema = new mongoose.Schema({
   description: String,
   photo: String,
   isVIP: { type: Boolean, default: false },
+  isFake: { type: Boolean, default: false },
+  featured: { type: Boolean, default: false },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
   likes: [String]
 });
 
 const User = mongoose.model('User', UserSchema);
 
-// Lista corretta delle foto disponibili
+// Foto profilo disponibili
 const photos = [
   '/images/donna1.jpg',
   '/images/donna2.jpg',
@@ -31,21 +35,27 @@ const photos = [
 ];
 
 async function createFakeUsers() {
-  await User.deleteMany({}); // Cancella tutti gli utenti esistenti
+  await User.deleteMany(); // Pulisce tutti gli utenti
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 1; i <= 15; i++) {
     const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
+    const nickname = faker.internet.userName().toLowerCase().replace(/[^a-z0-9]/g, '');
     const fakeUser = new User({
-      nickname: faker.internet.userName(),
-      email: faker.internet.email(),
-      password: faker.internet.password(),
+      nickname: nickname,
+      email: `${nickname}@test.com`,
+      password: 'test1234',
       description: faker.lorem.sentence(),
       photo: randomPhoto,
-      isVIP: faker.datatype.boolean()
+      isVIP: faker.datatype.boolean(),
+      isFake: true,
+      featured: faker.datatype.boolean(),
+      role: 'user',
+      likes: []
     });
     await fakeUser.save();
   }
-  console.log('Utenti finti creati con successo ✅');
+
+  console.log('✅ 15 utenti finti creati con successo!');
   mongoose.connection.close();
 }
 

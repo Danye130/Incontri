@@ -1,44 +1,39 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const User = require('../models/User');
 
-// Upload setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'public/uploads';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+// Recupera dati profilo pubblico
+router.get('/profile/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'Profilo non trovato' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'Errore nel recupero del profilo' });
   }
 });
-const upload = multer({ storage });
 
-// GET profilo utente loggato
-router.get('/profile', async (req, res) => {
-  if (!req.user) return res.status(401).json({ message: 'Non autenticato' });
-  res.json(req.user);
-});
+// Aggiorna profilo (nickname, descrizione, isVIP, featured, ecc.)
+router.post('/profile/update', async (req, res) => {
+  const userId = req.headers['x-user-id'];
 
-// PUT modifica profilo
-router.put('/profile', upload.single('photo'), async (req, res) => {
-  if (!req.user) return res.status(401).json({ message: 'Non autenticato' });
-
-  const { nickname, description } = req.body;
-  if (nickname) req.user.nickname = nickname;
-  if (description) req.user.description = description;
-  if (req.file) req.user.photo = '/uploads/' + req.file.filename;
+  if (!userId) return res.status(401).json({ message: 'Non autorizzato' });
 
   try {
-    await req.user.save();
-    res.json({ message: 'Profilo aggiornato' });
+    const updateFields = (({
+      nickname,
+      description,
+      isVIP,
+      featured,
+      isFake
+    }) => ({ nickname, description, isVIP, featured, isFake }))(req.body);
+
+    const user = await User.findByIdAndUpdate(userId, updateFields, { new: true });
+    if (!user) return res.status(404).json({ message: 'Utente non trovato' });
+
+    res.json({ message: 'Profilo aggiornato', user });
   } catch (err) {
-    console.error('Errore salvataggio profilo:', err);
-    res.status(500).json({ message: 'Errore salvataggio profilo' });
+    res.status(500).json({ message: 'Errore durante l\'aggiornamento del profilo' });
   }
 });
 
