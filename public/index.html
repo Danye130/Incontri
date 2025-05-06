@@ -87,21 +87,14 @@
       color: #777;
       font-size: 14px;
     }
-
-    #backLink {
-      display: inline-block;
-      margin-top: 20px;
-      text-decoration: none;
-      color: #111;
-    }
   </style>
 </head>
 <body>
   <div id="navbar"></div>
   <script>
-    fetch("/navbar.html")
+    fetch('/navbar.html')
       .then(res => res.text())
-      .then(html => document.getElementById("navbar").innerHTML = html);
+      .then(html => document.getElementById('navbar').innerHTML = html);
   </script>
 
   <div class="hero">
