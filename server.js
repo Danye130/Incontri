@@ -34,13 +34,12 @@ const registerRoutes = require('./routes/register');
 const profileRoutes = require('./routes/profile');
 const adminRoutes = require('./routes/admin');
 
-// Attivazione rotte API
 app.use('/api', authRoutes);
 app.use('/api', registerRoutes);
 app.use('/api', profileRoutes);
 app.use('/admin', adminRoutes);
 
-// Middleware autenticazione
+// Middleware autenticazione semplice (x-user-id)
 app.use(async (req, res, next) => {
   const userId = req.headers['x-user-id'];
   if (userId) {
@@ -60,7 +59,7 @@ function requireRole(role) {
   };
 }
 
-// MODELLI MESSAGGI e POST
+// MODELLI MESSAGGI E POST
 const MessageSchema = new mongoose.Schema({
   sender: String,
   receiver: String,
@@ -78,7 +77,7 @@ const PostSchema = new mongoose.Schema({
 });
 const Post = mongoose.model('Post', PostSchema);
 
-// ROTTA CREAZIONE POST
+// CREAZIONE POST
 app.post('/posts/create', requireRole('user'), multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
@@ -93,20 +92,26 @@ app.post('/posts/create', requireRole('user'), multer({
 }).single('media'), async (req, res) => {
   const post = new Post({
     creator: req.user._id,
-    text: req.body.text,
+    text: req.body.caption || '',
     mediaUrl: req.file ? '/uploads/' + req.file.filename : null
   });
   await post.save();
   res.json(post);
 });
 
-// ROTTA FEED POST
+// FEED DEI POST
 app.get('/posts/feed', async (req, res) => {
   const posts = await Post.find().populate('creator', 'nickname photo').sort({ createdAt: -1 });
   res.json(posts);
 });
 
-// ROTTA PROFILI IN EVIDENZA
+// ALIAS /posts/all
+app.get('/posts/all', async (req, res) => {
+  const posts = await Post.find().populate('creator', 'nickname photo').sort({ createdAt: -1 });
+  res.json(posts);
+});
+
+// PROFILI IN EVIDENZA
 app.get('/api/featured-users', async (req, res) => {
   try {
     const featuredUsers = await User.find({ featured: true }).limit(10);
@@ -116,7 +121,7 @@ app.get('/api/featured-users', async (req, res) => {
   }
 });
 
-// ROTTA TUTTI GLI UTENTI (ORDINATI)
+// LISTA UTENTI (per index/scopri)
 app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find().sort({ featured: -1, isFake: 1 });
@@ -124,6 +129,12 @@ app.get('/api/users', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Errore nel recupero degli utenti' });
   }
+});
+
+// AGGIUNTA: /list-users (alias per compatibilità frontend)
+app.get('/list-users', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
 });
 
 // AVVIO SERVER
