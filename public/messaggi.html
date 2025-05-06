@@ -3,54 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Messaggi Ricevuti - Incontri</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <title>Messaggi - Incontri</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+    .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .chat-list { margin-bottom: 20px; }
+    .chat-list div { padding: 10px; border-bottom: 1px solid #ddd; cursor: pointer; }
+    .chat-list div:hover { background: #f5f5f5; }
+    .chat-box { border-top: 1px solid #ddd; padding-top: 10px; display: none; }
+    .message { margin: 5px 0; }
+    .sent { text-align: right; color: blue; }
+    .received { text-align: left; color: green; }
+    input, button {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button { background: #111; color: white; cursor: pointer; }
+    button:hover { background: #333; }
+  </style>
 </head>
 <body>
-  <div class="container center-content">
-    <h1>Messaggi Ricevuti</h1>
-    <div id="senders-list" class="card-grid">Caricamento...</div>
-    <a href="index.html" class="btn">🏠 Torna alla Home</a>
+  <div id="navbar"></div>
+  <script>
+    fetch('/navbar.html')
+      .then(res => res.text())
+      .then(html => document.getElementById('navbar').innerHTML = html);
+  </script>
+
+  <div class="container">
+    <h2>Messaggi</h2>
+    <div class="chat-list" id="chatList">Caricamento contatti...</div>
+
+    <div class="chat-box" id="chatBox">
+      <h3 id="chatWith"></h3>
+      <div id="messageList"></div>
+      <input type="text" id="messageInput" placeholder="Scrivi un messaggio..." />
+      <button onclick="sendMessage()">Invia</button>
+    </div>
   </div>
 
   <script>
-    const email = localStorage.getItem("userEmail");
+    const email = localStorage.getItem("userId");
+    let currentChat = null;
 
     if (!email) {
       alert("Non sei loggato.");
       window.location.href = "login.html";
     }
 
-    fetch(`https://incontri-backend.onrender.com/message-senders?receiver=${email}`)
-      .then(res => res.json())
-      .then(users => {
-        const list = document.getElementById("senders-list");
-        list.innerHTML = "";
+    function loadChats() {
+      fetch(`/message-senders?receiver=${email}`)
+        .then(res => res.json())
+        .then(users => {
+          const list = document.getElementById("chatList");
+          list.innerHTML = "";
+          if (users.length === 0) {
+            list.innerHTML = "<p>Nessun messaggio ricevuto.</p>";
+            return;
+          }
 
-        if (users.length === 0) {
-          list.innerHTML = "<p>Nessun messaggio ricevuto.</p>";
-          return;
-        }
-
-        users.forEach(user => {
-          const div = document.createElement("div");
-          div.className = "card";
-
-          div.innerHTML = `
-            <img src="${user.photo || '/images/default-profile.png'}" class="profile-photo" />
-            <h3>${user.nickname}</h3>
-            <a href="chat.html?receiverEmail=${user.email}" class="btn">📨 Rispondi</a>
-          `;
-
-          list.appendChild(div);
+          users.forEach(user => {
+            const div = document.createElement("div");
+            div.textContent = user.nickname + " (" + user.email + ")";
+            div.onclick = () => openChat(user.email, user.nickname);
+            list.appendChild(div);
+          });
         });
-      })
-      .catch(err => {
-        console.error("Errore caricamento mittenti:", err);
-        document.getElementById("senders-list").innerHTML = "<p>Errore caricamento messaggi.</p>";
-      });
-  </script>
-<script src="/auth_utils.html"></script>
+    }
 
+    function openChat(contactEmail, contactNickname) {
+      currentChat = contactEmail;
+      document.getElementById("chatWith").textContent = "Conversazione con: " + contactNickname;
+      document.getElementById("chatBox").style.display = "block";
+
+      fetch(`/get-messages?sender=${email}&receiver=${contactEmail}`)
+        .then(res => res.json())
+        .then(messages => {
+          const msgList = document.getElementById("messageList");
+          msgList.innerHTML = "";
+
+          messages.forEach(msg => {
+            const div = document.createElement("div");
+            div.className = "message " + (msg.sender === email ? "sent" : "received");
+            div.textContent = msg.text;
+            msgList.appendChild(div);
+          });
+
+          fetch("/mark-messages-read", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sender: contactEmail, receiver: email })
+          });
+        });
+    }
+
+    function sendMessage() {
+      const text = document.getElementById("messageInput").value.trim();
+      if (!text || !currentChat) return;
+
+      fetch("/send-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sender: email, receiver: currentChat, text })
+      }).then(() => {
+        document.getElementById("messageInput").value = "";
+        openChat(currentChat, document.getElementById("chatWith").textContent.split(": ")[1]);
+      });
+    }
+
+    loadChats();
+  </script>
+
+  <script src="/auth_utils.html"></script>
 </body>
 </html>

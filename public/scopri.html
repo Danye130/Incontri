@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chi ti ha messo Like</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scopri Utenti</title>
   <style>
     body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
     .container { max-width: 800px; margin: auto; }
@@ -25,6 +25,19 @@
     }
     .card h3 { margin: 0 0 5px 0; }
     .card p { margin: 0; font-size: 14px; color: #555; }
+    button {
+      margin-left: auto;
+      padding: 10px 14px;
+      background: #111;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button.liked {
+      background: #888;
+      cursor: not-allowed;
+    }
     #backHome {
       display: inline-block;
       margin-top: 20px;
@@ -43,8 +56,8 @@
   </script>
 
   <div class="container">
-    <h2>Chi ti ha messo Like</h2>
-    <div id="likeList">Caricamento...</div>
+    <h2>Scopri altri utenti</h2>
+    <div id="userList">Caricamento...</div>
     <a id="backHome" href="/index.html">← Torna alla Home</a>
   </div>
 
@@ -54,19 +67,11 @@
     fetch("/list-users")
       .then(res => res.json())
       .then(users => {
-        const list = users.filter(user =>
-          user.likes && user.likes.includes(currentUser)
-        );
-
-        const container = document.getElementById("likeList");
+        const container = document.getElementById("userList");
         container.innerHTML = "";
+        users.forEach(user => {
+          if (user.email === currentUser) return; // salta se sei tu stesso
 
-        if (list.length === 0) {
-          container.innerHTML = "<p>Nessun like ricevuto al momento.</p>";
-          return;
-        }
-
-        list.forEach(user => {
           const card = document.createElement("div");
           card.className = "card";
 
@@ -76,8 +81,33 @@
           const info = document.createElement("div");
           info.innerHTML = `<h3>${user.nickname}</h3><p>${user.description || ''}</p>`;
 
+          const likeBtn = document.createElement("button");
+          likeBtn.textContent = "❤️ Like";
+          if (user.likes && user.likes.includes(currentUser)) {
+            likeBtn.classList.add("liked");
+            likeBtn.disabled = true;
+            likeBtn.textContent = "❤️ Già messo";
+          }
+
+          likeBtn.onclick = () => {
+            fetch("/like", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                senderNickname: currentUser,
+                receiverEmail: user.email
+              })
+            })
+            .then(() => {
+              likeBtn.textContent = "❤️ Già messo";
+              likeBtn.classList.add("liked");
+              likeBtn.disabled = true;
+            });
+          };
+
           card.appendChild(img);
           card.appendChild(info);
+          card.appendChild(likeBtn);
           container.appendChild(card);
         });
       });

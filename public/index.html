@@ -4,67 +4,146 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Incontri - Home</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f9f9f9;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #111, #444);
+      color: white;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .hero h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+
+    .hero a {
+      background: white;
+      color: #111;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .section {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .section h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .card img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-bottom: 10px;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .card p {
+      font-size: 14px;
+      color: #555;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #777;
+      font-size: 14px;
+    }
+
+    #backLink {
+      display: inline-block;
+      margin-top: 20px;
+      text-decoration: none;
+      color: #111;
+    }
+  </style>
 </head>
 <body>
-
-  <div class="container">
-    <h1>Benvenuto su <span class="vip-badge">Incontri</span></h1>
-
-    <div class="home-buttons">
-      <a href="signup.html" class="btn" id="signupBtn">📝 Registrati</a>
-      <a href="login.html" class="btn" id="loginBtn">🔐 Accedi</a>
-      <a href="profile.html" class="btn hidden" id="profileBtn">👤 Profilo</a>
-      <a href="utenti.html" class="btn hidden" id="usersBtn">🔍 Scopri Utenti</a>
-      <button id="messagesBtn" class="btn hidden">📩 Messaggi</button>
-      <button id="likesBtn" class="btn hidden">❤️ Like Ricevuti</button>
-      <button class="btn hidden" id="logoutBtn">🚪 Logout</button>
-    </div>
-
-    <h2>⭐ Profili in Evidenza</h2>
-    <div class="card-grid" id="featuredUsers"></div>
-
-    <h2>👥 Tutti i Profili</h2>
-    <div class="card-grid" id="allUsers"></div>
-  </div>
-
+  <div id="navbar"></div>
   <script>
-    const email = localStorage.getItem("userEmail");
-
-    if (email) {
-      document.getElementById("signupBtn").style.display = "none";
-      document.getElementById("loginBtn").style.display = "none";
-      document.getElementById("profileBtn").classList.remove("hidden");
-      document.getElementById("usersBtn").classList.remove("hidden");
-      document.getElementById("logoutBtn").classList.remove("hidden");
-      document.getElementById("messagesBtn").classList.remove("hidden");
-      document.getElementById("likesBtn").classList.remove("hidden");
-    }
-
-    async function loadUsers(endpoint, containerId) {
-      try {
-        const res = await fetch(endpoint);
-        const users = await res.json();
-        const container = document.getElementById(containerId);
-        container.innerHTML = "";
-
-        users.forEach(user => {
-          const div = document.createElement('div');
-          div.className = 'card';
-          div.innerHTML = `
-            <img class="profile-photo" src="${user.photo || '/images/default-profile.jpg'}" alt="${user.nickname}">
-            <h3>${user.nickname}${user.isVIP ? '<span class="vip-badge">VIP</span>' : ''}</h3>
-          `;
-          container.appendChild(div);
-        });
-      } catch (err) {
-        console.error("Errore caricamento utenti:", err);
-      }
-    }
-
-    loadUsers('/api/featured-users', 'featuredUsers');
-    loadUsers('/api/users', 'allUsers');
+    fetch("/navbar.html")
+      .then(res => res.text())
+      .then(html => document.getElementById("navbar").innerHTML = html);
   </script>
 
+  <div class="hero">
+    <h1>Benvenuto su Incontri</h1>
+    <p>Scopri creator, segui profili e connettiti</p>
+    <a href="/scopri.html">Scopri i Profili</a>
+  </div>
+
+  <div class="section">
+    <h2>🔥 Profili in evidenza</h2>
+    <div class="card-grid" id="featuredList">Caricamento...</div>
+  </div>
+
+  <footer>© 2025 Incontri - Tutti i diritti riservati</footer>
+
+  <script>
+    fetch("/list-users")
+      .then(res => res.json())
+      .then(users => {
+        const list = document.getElementById("featuredList");
+        list.innerHTML = "";
+
+        const featured = users.filter(u => u.isFeatured);
+
+        if (featured.length === 0) {
+          list.innerHTML = "<p>Nessun profilo in evidenza al momento.</p>";
+          return;
+        }
+
+        featured.forEach(user => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <img src="${user.photo || '/images/default-profile.png'}" />
+            <h3>${user.nickname}</h3>
+            <p>${user.description || ''}</p>
+          `;
+          list.appendChild(card);
+        });
+      });
+  </script>
+
+  <script src="/auth_utils.html"></script>
 </body>
 </html>

@@ -1,33 +1,42 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Il mio Profilo - Incontri</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Il Mio Profilo</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
-    main { max-width: 500px; margin: 30px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
     h2 { text-align: center; }
-    label { display: block; margin-top: 15px; }
-    input, textarea, button {
+    input, textarea {
       width: 100%;
       padding: 10px;
-      margin-top: 5px;
+      margin-top: 10px;
+      margin-bottom: 20px;
       border: 1px solid #ccc;
       border-radius: 6px;
-      font-size: 16px;
     }
     button {
+      width: 100%;
+      padding: 12px;
       background-color: #111;
       color: white;
       border: none;
-      margin-top: 20px;
+      border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
     }
     button:hover {
       background-color: #333;
     }
-    #navbar { width: 100%; }
+    img { max-width: 100px; margin-top: 10px; display: block; }
   </style>
 </head>
 <body>
@@ -38,59 +47,64 @@
       .then(html => document.getElementById('navbar').innerHTML = html);
   </script>
 
-  <main>
-    <h2>Modifica Profilo</h2>
-    <form id="profileForm">
-      <label for="nickname">Nickname</label>
-      <input type="text" id="nickname" name="nickname" required>
+  <div class="container">
+    <h2>Il Mio Profilo</h2>
+    <form id="profileForm" enctype="multipart/form-data">
+      <label>Nickname</label>
+      <input type="text" id="nickname" name="nickname" required />
 
-      <label for="description">Descrizione</label>
-      <textarea id="description" name="description" rows="3"></textarea>
+      <label>Descrizione</label>
+      <textarea id="description" name="description" rows="4"></textarea>
 
-      <label for="photo">Foto profilo (solo immagine)</label>
-      <input type="file" id="photo" name="photo" accept="image/*">
+      <label>Password</label>
+      <input type="password" id="password" name="password" />
 
-      <button type="submit">Salva modifiche</button>
+      <label>Foto profilo</label>
+      <input type="file" id="photo" name="photo" accept="image/*" />
+      <img id="currentPhoto" src="" alt="Foto profilo" />
+
+      <input type="hidden" id="email" name="email" />
+
+      <button type="submit">Salva Modifiche</button>
     </form>
-  </main>
+  </div>
 
   <script>
-    const form = document.getElementById('profileForm');
+    const userId = localStorage.getItem('userId');
 
-    async function caricaProfilo() {
-      try {
-        const res = await fetch('/api/profile');
-        const user = await res.json();
-        document.getElementById('nickname').value = user.nickname || '';
-        document.getElementById('description').value = user.description || '';
-      } catch (err) {
-        alert('Errore nel caricamento del profilo');
-      }
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-
-      try {
-        const res = await fetch('/api/profile', {
-          method: 'PUT',
-          body: formData
-        });
-
-        if (res.ok) {
-          alert('Profilo aggiornato!');
-        } else {
-          alert('Errore nel salvataggio');
-        }
-      } catch (err) {
-        alert('Errore invio dati');
+    // Carica i dati del profilo
+    fetch('/profile-data?email=' + encodeURIComponent(userId))
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('nickname').value = data.nickname || '';
+        document.getElementById('description').value = data.description || '';
+        document.getElementById('currentPhoto').src = data.photo || '/images/default-profile.png';
+        document.getElementById('email').value = userId;
+      })
+      .catch(err => {
+        alert("Errore nel caricamento del profilo.");
         console.error(err);
+      });
+
+    // Salva le modifiche
+    document.getElementById('profileForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const form = new FormData(this);
+
+      const res = await fetch('/update-profile', {
+        method: 'POST',
+        body: form
+      });
+
+      if (res.ok) {
+        alert("Profilo aggiornato!");
+        location.reload();
+      } else {
+        alert("Errore durante il salvataggio.");
       }
     });
-
-    caricaProfilo();
   </script>
+
   <script src="/auth_utils.html"></script>
 </body>
 </html>

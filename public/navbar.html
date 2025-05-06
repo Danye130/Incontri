@@ -1,11 +1,43 @@
-<!-- navbar.html -->
-<nav style="background:#111; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
-  <div style="color: white; font-weight: bold; font-size: 18px;">Incontri</div>
-  <div>
-    <a href="/index.html" style="color:white; margin-right:15px; text-decoration:none;">Home</a>
-    <a href="/feed.html" style="color:white; margin-right:15px; text-decoration:none;">Feed</a>
-    <a href="/creator.html" style="color:white; margin-right:15px; text-decoration:none;">Creator</a>
-    <a href="/admin.html" style="color:white; margin-right:15px; text-decoration:none;">Admin</a>
-    <a href="#" onclick="localStorage.clear(); location.href='/login.html'" style="color:white; text-decoration:none;">Logout</a>
-  </div>
+<nav>
+  <ul id="navMenu">
+    <!-- Il menu sarà popolato dinamicamente -->
+  </ul>
 </nav>
+
+<script>
+  const userId = localStorage.getItem('userId');
+  const navMenu = document.getElementById('navMenu');
+
+  if (userId) {
+    // Utente loggato
+    fetch('/profile-data?email=' + encodeURIComponent(userId))
+      .then(res => res.json())
+      .then(data => {
+        navMenu.innerHTML = `
+          <li><a href="/index.html">Home</a></li>
+          <li><a href="/feed.html">Feed</a></li>
+          <li><a href="/creator.html">Creator</a></li>
+          <li><a href="/profile.html">Profilo</a></li>
+          <li><a href="#" onclick="logout()">Logout</a></li>
+        `;
+
+        if (data.role === 'admin') {
+          const adminItem = document.createElement('li');
+          adminItem.innerHTML = `<a href="/admin.html">Admin</a>`;
+          navMenu.appendChild(adminItem);
+        }
+      });
+  } else {
+    // Utente non loggato
+    navMenu.innerHTML = `
+      <li><a href="/index.html">Home</a></li>
+      <li><a href="/login.html">Accedi</a></li>
+      <li><a href="/signup.html">Registrati</a></li>
+    `;
+  }
+
+  function logout() {
+    localStorage.removeItem('userId');
+    window.location.href = '/login.html';
+  }
+</script>
