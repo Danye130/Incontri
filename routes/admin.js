@@ -2,43 +2,41 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// Middleware di controllo ruolo admin
-function requireAdmin(req, res, next) {
-  const user = req.user;
-  if (!user || user.role !== 'admin') {
-    return res.status(403).json({ message: 'Accesso riservato agli admin' });
-  }
-  next();
+// Middleware per autenticazione semplice con userId
+function checkAdmin(req, res, next) {
+  const userId = req.headers['x-user-id'];
+  if (!userId) return res.status(403).send("Accesso negato");
+
+  User.findOne({ email: userId }).then(user => {
+    if (!user || user.role !== 'admin') {
+      return res.status(403).send("Accesso solo per admin");
+    }
+    next();
+  });
 }
 
-// Ottieni tutti gli utenti
-router.get('/users', requireAdmin, async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: 'Errore nel recupero utenti' });
-  }
+// GET tutti gli utenti
+router.get('/users', checkAdmin, async (req, res) => {
+  const utenti = await User.find();
+  res.json(utenti);
 });
 
-// Modifica ruolo o stato utente
-router.post('/user/:id/update', requireAdmin, async (req, res) => {
-  try {
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json({ message: 'Utente aggiornato', user: updatedUser });
-  } catch (err) {
-    res.status(500).json({ message: 'Errore aggiornamento utente' });
-  }
+// Cambia ruolo utente
+router.put('/users/:id/role', checkAdmin, async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, { role: req.body.role });
+  res.sendStatus(200);
 });
 
-// Elimina utente (es. profilo fake)
-router.delete('/user/:id', requireAdmin, async (req, res) => {
-  try {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Utente eliminato' });
-  } catch (err) {
-    res.status(500).json({ message: 'Errore eliminazione utente' });
-  }
+// Aggiorna campo "in evidenza"
+router.put('/users/:id/featured', checkAdmin, async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, { isFeatured: req.body.isFeatured });
+  res.sendStatus(200);
+});
+
+// Elimina utente
+router.delete('/users/:id', checkAdmin, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.sendStatus(200);
 });
 
 module.exports = router;
