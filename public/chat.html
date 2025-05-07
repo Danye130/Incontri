@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat - Incontri</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .container {
+      width: 90%;
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #messages {
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background-color: #f9f9f9;
+      margin-bottom: 10px;
+    }
+
+    #messageInput {
+      width: 75%;
+      padding: 10px;
+      margin-right: 5px;
+    }
+
+    #sendButton {
+      padding: 10px 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Chat</h1>
+    <div id="messages">Caricamento messaggi...</div>
+
+    <input type="text" id="messageInput" placeholder="Scrivi un messaggio...">
+    <button id="sendButton">Invia</button>
+
+    <br><br>
+    <a href="index.html" class="btn">🏠 Torna alla Home</a>
+  </div>
+
+  <script>
+    const email = localStorage.getItem("userEmail");
+    const urlParams = new URLSearchParams(window.location.search);
+    const receiverEmail = urlParams.get("receiverEmail");
+
+    if (!email || !receiverEmail) {
+      alert("Errore: dati mancanti.");
+      window.location.href = "index.html";
+    }
+
+    function loadMessages() {
+      fetch(`https://incontri-backend.onrender.com/get-messages?sender=${email}&receiver=${receiverEmail}`)
+        .then(response => response.json())
+        .then(messages => {
+          const messagesDiv = document.getElementById('messages');
+          messagesDiv.innerHTML = '';
+          messages.forEach(msg => {
+            const p = document.createElement('p');
+            p.textContent = `${msg.sender}: ${msg.text}`;
+            messagesDiv.appendChild(p);
+          });
+        })
+        .catch(err => console.error('Errore caricamento messaggi:', err));
+    }
+
+    document.getElementById('sendButton').addEventListener('click', () => {
+      const text = document.getElementById('messageInput').value;
+      fetch('https://incontri-backend.onrender.com/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: email, receiver: receiverEmail, text })
+      })
+      .then(() => {
+        document.getElementById('messageInput').value = '';
+        loadMessages();
+      })
+      .catch(err => console.error('Errore invio messaggio:', err));
+    });
+
+    loadMessages();
+    setInterval(loadMessages, 5000);
+  </script>
+
+</body>
+</html>

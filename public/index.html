@@ -2,141 +2,29 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Incontri - Home</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f9f9f9;
-    }
-
-    .hero {
-      background: linear-gradient(135deg, #111, #444);
-      color: white;
-      text-align: center;
-      padding: 60px 20px;
-    }
-
-    .hero h1 {
-      font-size: 2.5em;
-      margin-bottom: 10px;
-    }
-
-    .hero p {
-      font-size: 1.2em;
-      margin-bottom: 30px;
-    }
-
-    .hero a {
-      background: white;
-      color: #111;
-      padding: 12px 24px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .section {
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
-
-    .section h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 16px;
-      text-align: center;
-    }
-
-    .card img {
-      width: 100px;
-      height: 100px;
-      object-fit: cover;
-      border-radius: 50%;
-      margin-bottom: 10px;
-    }
-
-    .card h3 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .card p {
-      font-size: 14px;
-      color: #555;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      color: #777;
-      font-size: 14px;
-    }
-  </style>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div id="navbar"></div>
-  <script>
-    fetch('/navbar.html')
-      .then(res => res.text())
-      .then(html => document.getElementById('navbar').innerHTML = html);
-  </script>
-
-  <div class="hero">
+  <div class="container center-content">
     <h1>Benvenuto su Incontri</h1>
-    <p>Scopri creator, segui profili e connettiti</p>
-    <a href="/scopri.html">Scopri i Profili</a>
+
+    <div class="home-buttons">
+      <a href="signup.html" class="btn" id="signupBtn">Registrati</a>
+      <a href="login.html" class="btn" id="loginBtn">Accedi</a>
+      <a href="profile.html" class="btn hidden" id="profileBtn">Profilo</a>
+      <a href="utenti.html" class="btn hidden" id="usersBtn">Scopri Utenti</a>
+
+      <button id="messagesBtn" class="btn hidden">
+        📩 Messaggi <span id="msg-alert" class="msg-alert" style="display: none;">●</span>
+      </button>
+
+      <button id="likesBtn" class="btn hidden">🔔 Like Ricevuti</button>
+      <button class="btn hidden" id="logoutBtn">Logout</button>
+    </div>
   </div>
 
-  <div class="section">
-    <h2>🔥 Profili in evidenza</h2>
-    <div class="card-grid" id="featuredList">Caricamento...</div>
-  </div>
-
-  <footer>© 2025 Incontri - Tutti i diritti riservati</footer>
-
-  <script>
-    fetch("/list-users")
-      .then(res => res.json())
-      .then(users => {
-        const list = document.getElementById("featuredList");
-        list.innerHTML = "";
-
-        const featured = users.filter(u => u.isFeatured);
-
-        if (featured.length === 0) {
-          list.innerHTML = "<p>Nessun profilo in evidenza al momento.</p>";
-          return;
-        }
-
-        featured.forEach(user => {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.innerHTML = `
-            <img src="${user.photo || '/images/default-profile.png'}" />
-            <h3>${user.nickname}</h3>
-            <p>${user.description || ''}</p>
-          `;
-          list.appendChild(card);
-        });
-      });
-  </script>
-
-  <script src="/auth_utils.html"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

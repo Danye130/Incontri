@@ -1,116 +1,23 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registrazione - Incontri</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f0f2f5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      height: 100vh;
-      margin: 0;
-    }
-
-    .signup-box {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      max-width: 450px;
-      width: 100%;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #111;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #333;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 10px;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registrati - Incontri</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-
-  <div class="signup-box">
-    <h2>Crea un nuovo account</h2>
-    <form id="signupForm" enctype="multipart/form-data">
-      <input type="text" id="nickname" placeholder="Nickname" required />
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <textarea id="description" placeholder="Descrizione profilo (facoltativa)"></textarea>
-      <label for="photo">Foto profilo:</label>
-      <input type="file" id="photo" accept="image/*" />
-      <button type="submit">Registrati</button>
+  <div class="container center-content">
+    <h1>Registrati</h1>
+    <form action="/signup" method="POST" enctype="multipart/form-data">
+      <input type="text" name="nickname" placeholder="Nickname" required />
+      <input type="email" name="email" placeholder="Email" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <textarea name="description" placeholder="Descrizione"></textarea>
+      <input type="file" name="photo" accept="image/*" />
+      <button type="submit" class="btn">Registrati</button>
     </form>
+    <a href="login.html" class="btn">Hai già un account? Accedi</a>
   </div>
-
-  <script>
-    document.getElementById("signupForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const formData = new FormData();
-      formData.append("nickname", document.getElementById("nickname").value);
-      formData.append("email", document.getElementById("email").value);
-      formData.append("password", document.getElementById("password").value);
-      formData.append("description", document.getElementById("description").value);
-
-      const photoInput = document.getElementById("photo");
-      if (photoInput.files.length > 0) {
-        formData.append("photo", photoInput.files[0]);
-      }
-
-      try {
-        const res = await fetch("/api/register", {
-          method: "POST",
-          body: formData
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          alert("Registrazione completata!");
-          window.location.href = "/login.html";
-        } else {
-          alert(data.message || "Errore durante la registrazione.");
-        }
-      } catch (err) {
-        console.error("Errore:", err);
-        alert("Errore imprevisto durante la registrazione.");
-      }
-    });
-  </script>
-
 </body>
 </html>
