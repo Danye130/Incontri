@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scopri Utenti - Incontri</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .user-card {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .user-card img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .user-info {
+      flex-grow: 1;
+    }
+
+    .user-actions button {
+      margin: 5px 5px 0 0;
+    }
+
+    @media screen and (max-width: 600px) {
+      .user-card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .user-card img {
+        margin-bottom: 10px;
+      }
+
+      .user-actions {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Scopri Utenti</h1>
+    <div id="users-list">Caricamento...</div>
+    <a href="index.html" class="btn">🏠 Torna alla Home</a>
+  </div>
+
+  <script>
+    const userEmail = localStorage.getItem("userEmail");
+
+    if (!userEmail) {
+      alert("Non sei loggato.");
+      window.location.href = "login.html";
+    }
+
+    fetch("https://incontri-backend.onrender.com/list-users")
+      .then(res => res.json())
+      .then(users => {
+        const container = document.getElementById("users-list");
+        container.innerHTML = "";
+
+        const me = users.find(u => u.email === userEmail);
+        const senderNickname = me?.nickname || "";
+
+        users
+          .filter(user => user.email !== userEmail)
+          .forEach(user => {
+            const div = document.createElement("div");
+            div.className = "user-card";
+
+            div.innerHTML = `
+              <img src="${user.photo}" alt="${user.nickname}" />
+              <div class="user-info">
+                <strong>${user.nickname}</strong><br/>
+                <small>${user.description || "Nessuna descrizione"}</small><br/>
+                ${user.isVIP ? "<span style='color:gold;'>⭐ VIP</span>" : ""}
+              </div>
+              <div class="user-actions">
+                <a href="chat.html?receiverEmail=${user.email}" class="btn">💬 Messaggio</a>
+                <button class="btn like-btn" data-email="${user.email}">❤️ Like</button>
+              </div>
+            `;
+            container.appendChild(div);
+          });
+
+        // Like handler
+        document.querySelectorAll(".like-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const receiverEmail = btn.dataset.email;
+            fetch("https://incontri-backend.onrender.com/like", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                senderNickname,
+                receiverEmail
+              })
+            })
+            .then(() => alert("Like inviato!"))
+            .catch(() => alert("Errore invio like."));
+          });
+        });
+      })
+      .catch(err => {
+        console.error("Errore caricamento utenti:", err);
+        document.getElementById("users-list").innerHTML = "<p>Errore nel caricamento utenti.</p>";
+      });
+  </script>
+</body>
+</html>
