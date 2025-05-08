@@ -33,9 +33,11 @@ const UserSchema = new mongoose.Schema({
   description: String,
   photo: String,
   isVIP: { type: Boolean, default: false },
-  likes: [String]
+  likes: [String],
+  isAdmin: { type: Boolean, default: false } // Aggiunto campo admin
 });
 const User = mongoose.model('User', UserSchema);
+
 
 const MessageSchema = new mongoose.Schema({
   sender: String,
@@ -86,13 +88,14 @@ app.post('/login', async (req, res) => {
   if (user) {
     const response = {
       email: user.email,
-      isAdmin: email === "admin@example.com"
+      isAdmin: user.isAdmin // Leggiamo il campo isAdmin
     };
     res.json(response);
   } else {
     res.status(401).send("Email o password errata.");
   }
 });
+
 
 
 // Dati profilo
@@ -231,4 +234,22 @@ app.get('/', (req, res) => {
 // Avvio
 app.listen(PORT, () => {
   console.log(`✅ Server avviato su http://localhost:${PORT}`);
+});
+// Imposta un utente come admin
+app.post('/set-admin', async (req, res) => {
+  const { email, isAdmin } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).send("Utente non trovato");
+    }
+
+    user.isAdmin = isAdmin;
+    await user.save();
+
+    res.send(`Utente ${email} aggiornato a admin: ${isAdmin}`);
+  } catch (error) {
+    res.status(500).send("Errore durante l'aggiornamento dell'utente");
+  }
 });
