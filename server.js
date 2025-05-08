@@ -82,12 +82,18 @@ app.post('/signup', upload.single('photo'), async (req, res) => {
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email, password });
+
   if (user) {
-    res.redirect('/index.html');
+    const response = {
+      email: user.email,
+      isAdmin: email === "admin@example.com"
+    };
+    res.json(response);
   } else {
-    res.send('Email o password errata.');
+    res.status(401).send("Email o password errata.");
   }
 });
+
 
 // Dati profilo
 app.get('/profile-data', async (req, res) => {

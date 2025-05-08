@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Incontri - Home</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -15,16 +15,45 @@
       <a href="login.html" class="btn" id="loginBtn">Accedi</a>
       <a href="profile.html" class="btn hidden" id="profileBtn">Profilo</a>
       <a href="utenti.html" class="btn hidden" id="usersBtn">Scopri Utenti</a>
-
-      <button id="messagesBtn" class="btn hidden">
-        📩 Messaggi <span id="msg-alert" class="msg-alert" style="display: none;">●</span>
-      </button>
-
-      <button id="likesBtn" class="btn hidden">🔔 Like Ricevuti</button>
+      <a href="messaggi.html" class="btn hidden" id="messagesBtn">Messaggi</a>
+      <a href="admin.html" class="btn hidden" id="adminBtn">Admin</a>
       <button class="btn hidden" id="logoutBtn">Logout</button>
     </div>
   </div>
 
-  <script src="js/main.js"></script>
+  <script>
+    const email = localStorage.getItem("userEmail");
+    const isAdmin = localStorage.getItem("isAdmin");
+
+    function updateMenu() {
+      if (email) {
+        document.getElementById("signupBtn").classList.add("hidden");
+        document.getElementById("loginBtn").classList.add("hidden");
+        document.getElementById("profileBtn").classList.remove("hidden");
+        document.getElementById("usersBtn").classList.remove("hidden");
+        document.getElementById("messagesBtn").classList.remove("hidden");
+        document.getElementById("logoutBtn").classList.remove("hidden");
+
+        if (isAdmin === "true") {
+          document.getElementById("adminBtn").classList.remove("hidden");
+        }
+      } else {
+        document.getElementById("signupBtn").classList.remove("hidden");
+        document.getElementById("loginBtn").classList.remove("hidden");
+        document.getElementById("profileBtn").classList.add("hidden");
+        document.getElementById("usersBtn").classList.add("hidden");
+        document.getElementById("messagesBtn").classList.add("hidden");
+        document.getElementById("adminBtn").classList.add("hidden");
+        document.getElementById("logoutBtn").classList.add("hidden");
+      }
+    }
+
+    updateMenu();
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "index.html";
+    });
+  </script>
 </body>
 </html>

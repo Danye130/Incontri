@@ -3,108 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Il Mio Profilo</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    h2 { text-align: center; }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #111;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #333;
-    }
-    img { max-width: 100px; margin-top: 10px; display: block; }
-  </style>
+  <title>Il tuo Profilo</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div id="navbar"></div>
-  <script>
-    fetch('/navbar.html')
-      .then(res => res.text())
-      .then(html => document.getElementById('navbar').innerHTML = html);
-  </script>
+  <div class="container center-content">
+    <h1>Il tuo Profilo</h1>
 
-  <div class="container">
-    <h2>Il Mio Profilo</h2>
-    <form id="profileForm" enctype="multipart/form-data">
-      <label>Nickname</label>
-      <input type="text" id="nickname" name="nickname" required />
+    <div id="profile-info">
+      <p><strong>Nickname:</strong> <span id="nickname"></span></p>
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <p><strong>Descrizione:</strong> <span id="description"></span></p>
+      <img id="profile-photo" src="" alt="Foto Profilo" style="width: 150px; height: 150px; border-radius: 50%;">
+    </div>
 
-      <label>Descrizione</label>
-      <textarea id="description" name="description" rows="4"></textarea>
-
-      <label>Password</label>
-      <input type="password" id="password" name="password" />
-
-      <label>Foto profilo</label>
-      <input type="file" id="photo" name="photo" accept="image/*" />
-      <img id="currentPhoto" src="" alt="Foto profilo" />
-
-      <input type="hidden" id="email" name="email" />
-
-      <button type="submit">Salva Modifiche</button>
-    </form>
+    <a href="index.html" class="btn">🏠 Torna alla Home</a>
   </div>
 
   <script>
-    const userId = localStorage.getItem('userId');
+    const email = localStorage.getItem("userEmail");
 
-    // Carica i dati del profilo
-    fetch('/profile-data?email=' + encodeURIComponent(userId))
-      .then(res => res.json())
+    if (!email) {
+      alert("Devi essere loggato per vedere il profilo.");
+      window.location.href = "login.html";
+    }
+
+    fetch(`https://incontri-backend.onrender.com/profile-data?email=${email}`)
+      .then(response => response.json())
       .then(data => {
-        document.getElementById('nickname').value = data.nickname || '';
-        document.getElementById('description').value = data.description || '';
-        document.getElementById('currentPhoto').src = data.photo || '/images/default-profile.png';
-        document.getElementById('email').value = userId;
+        document.getElementById("nickname").textContent = data.nickname;
+        document.getElementById("email").textContent = data.email;
+        document.getElementById("description").textContent = data.description;
+        document.getElementById("profile-photo").src = data.photo;
       })
-      .catch(err => {
+      .catch(() => {
         alert("Errore nel caricamento del profilo.");
-        console.error(err);
       });
-
-    // Salva le modifiche
-    document.getElementById('profileForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const form = new FormData(this);
-
-      const res = await fetch('/update-profile', {
-        method: 'POST',
-        body: form
-      });
-
-      if (res.ok) {
-        alert("Profilo aggiornato!");
-        location.reload();
-      } else {
-        alert("Errore durante il salvataggio.");
-      }
-    });
   </script>
-
-  <script src="/auth_utils.html"></script>
 </body>
 </html>
